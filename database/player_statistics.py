@@ -11,6 +11,7 @@ class PlayerStatisticsManager(DatabaseManager):
                 year INTEGER NOT NULL,
                 seasson INTEGER NOT NULL,
                 match_week INTEGER NOT NULL,
+                date DATE,
                 team VARCHAR,
                 goals INTEGER NOT NULL,
                 assists INTEGER NOT NULL,
@@ -20,6 +21,7 @@ class PlayerStatisticsManager(DatabaseManager):
                 red_card INTEGER NOT NULL,
                 votes INTEGER NOT NULL,
                 total_votes INTEGER NOT NULL,
+                note TEXT,
                 FOREIGN KEY (player_id) REFERENCES player(id)
             )
         """)
@@ -28,15 +30,18 @@ class PlayerStatisticsManager(DatabaseManager):
         self.execute_query("DROP TABLE IF EXISTS player_statistics")
 
     def add_player_statistics(
-            self, player_id, year, seasson, match_week, goals, assists, mvp, media, yellow_card,
-            red_card):
+            self, player_id, year, seasson, match_week, date, team, goals, assists, mvp, media, yellow_card,
+            red_card, votes, total_votes, note):
+        # Delete first if exists
+        query = "DELETE FROM player_statistics WHERE player_id = ? AND year = ? AND seasson = ? AND match_week = ?"
+        self.execute_query(query, (player_id, year, seasson, match_week))
         query = """
-            INSERT INTO player_statistics (player_id, year, seasson, match_week, goals, assists, mvp,
-            media, yellow_card, red_card)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+            INSERT INTO player_statistics (player_id, year, seasson, match_week, date, team, goals, assists, mvp,
+            media, yellow_card, red_card, votes, total_votes, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         self.execute_query(
-            query, (player_id, year, seasson, match_week, goals, assists, media, yellow_card,
-                    red_card))
+            query, (player_id, year, seasson, match_week, date, team, goals, assists, mvp, media, yellow_card,
+                    red_card, votes, total_votes, note))
 
     def get_general_statistics(self):
         """

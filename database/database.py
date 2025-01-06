@@ -17,7 +17,9 @@ class DatabaseManager:
 
     def execute_query(self, query, params=()):
         self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
         self.connection.commit()
+        return results
 
     def fetch_query(self, query, params=()):
         self.cursor.execute(query, params)

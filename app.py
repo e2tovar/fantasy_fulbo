@@ -31,10 +31,8 @@ elif menu == "Seleccionar Equipo":
     st.dataframe(jugadores_df)
 
     # Seleccionar jugadores
-    seleccionados = st.multiselect(
-        "Selecciona 7 jugadores",
-        jugadores["Nombre"]
-    )
+    st.subheader("Selecciona tu equipo")
+    seleccionados = st.multiselect("Jugadores", jugadores_df["Nombre"])
 
     # Calcular costo total
     costo_total = sum(jugadores_df[jugadores_df["Nombre"].isin(seleccionados)]["Precio"])

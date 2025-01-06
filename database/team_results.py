@@ -14,19 +14,27 @@ class TeamResultsManager(DatabaseManager):
                 team_name VARCHAR(10),
                 goals INTEGER,
                 goals_against INTEGER,
-                points INTEGER
+                points INTEGER,
+                rank INTEGER
             )
         """)
 
     def delete_table(self):
         return super().delete_table("team_results")
 
-    def add_team_result(self, year, season, match_week, team_name, goals, goals_against, points):
+    def add_team_result(self, year, season, match_week, team_name, goals, goals_against, points, rank):
+        # Delete first if exists
+        query = """
+            DELETE FROM team_results
+            WHERE year = ? AND season = ? AND match_week = ? AND team_name = ?
+        """
+        self.execute_query(query, (year, season, match_week, team_name))
+
         self.execute_query("""
             INSERT INTO team_results
-            (year, season, match_week, team_name, goals, goals_against, points)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (year, season, match_week, team_name, goals, goals_against, points))
+            (year, season, match_week, team_name, goals, goals_against, points, rank)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (year, season, match_week, team_name, goals, goals_against, points, rank))
 
     def get_week_result(self, year, season, match_week):
         return self.fetch_query("""
@@ -39,4 +47,10 @@ class TeamResultsManager(DatabaseManager):
             DELETE FROM team_results
             WHERE year = ? AND season = ? AND match_week = ?
         """, (year, season, match_week))
-    
+
+    def delete_season_results(self, year, season):
+        print(f"Deleting season {year} - {season}")
+        self.execute_query("""
+            DELETE FROM team_results
+            WHERE year = ? AND season = ?
+        """, (year, season))

@@ -18,7 +18,7 @@ class PlayerManager(DatabaseManager):
     def delete_table(self):
         return super().delete_table("players")
 
-    def get_fantasy_id(self):
+    def get_name_id_dict(self):
         """
         Devuelve un diccionario con el mapeo de cada jugador y su ID
         """
@@ -26,11 +26,20 @@ class PlayerManager(DatabaseManager):
         players = self.fetch_query(query)
         return {players[0]: players[1] for players in players}
 
-    def add_player(self, name, name_fantasy, position, price):
-        query = "INSERT INTO players(name, name_fantasy, position, price) VALUES (?, ?, ?, ?)"
-        self.execute_query(query, (name, name_fantasy, position, price))
+    def get_fantasyname_id_dict(self):
+        """
+        Devuelve un diccionario con el mapeo de cada jugador y su ID
+        """
+        query = "SELECT name_fantasy, id FROM players"
+        players = self.fetch_query(query)
+        return {players[0]: players[1] for players in players}
 
-    def get_player(self) -> pd.DataFrame:
+    def add_player(self, name, name_fantasy, position, price):
+        query = "INSERT INTO players(name, name_fantasy, position, price) VALUES (?, ?, ?, ?) RETURNING id"
+        id = self.execute_query(query, (name, name_fantasy, position, price))
+        return id
+
+    def get_all_players(self) -> pd.DataFrame:
         query = "SELECT * FROM players"
         return pd.read_sql_query(sql=query, con=self.engine, index_col="id")
 
