@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 import time
 
 from config import settings as st
-from utils.save_week import save_week_from_df
+from utils.save_week import save_week_players_stats_from_df, save_week_team_stats_from_df
+from database.players import PlayerManager
 
 
 def download_calendar(driver: webdriver.Chrome, wait: WebDriverWait, year: int, season: int):
@@ -119,7 +120,7 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
     # Nota
     df['note'] = """
         Datos desde app, 2023 faltan muchos datos.
-        Faltan pts y goles de equipos en tabla team_results
+        Faltan pts y goles de equipos en tabla team_stats
         Los colores de los equipos no son los reales
         No se anotaba el rking de equipos
         """
@@ -132,9 +133,15 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
         'votes', 'total_votes', 'team', 'rank', 'note']
 
     df['year'] = year
-    df['seasson'] = season
+    df['season'] = season
     df['match_week'] = week
     df['week_date'] = week_date
 
+    # id
+    pm = PlayerManager()
+    player_ids = pm.get_fantasyname_id_dict()
+    df['id'] = df['name'].map(player_ids)
+
     # Guardar datos en la base de datos
-    save_week_from_df(df)
+    #save_week_stats_from_df(df)
+    save_week_team_stats_from_df(df)

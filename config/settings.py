@@ -1,4 +1,4 @@
-JORNADA_PATH = "data/jornadas/2024/seasson6/jornada21.xlsx"
+WEEK_PATH = 'data/jornadas/2025/result_season_1_week_1.xlsm'
 HEADLESS = True
 
 TABLE_CLASS = "_LSFb4IwrZAI41Kk9tgr"
@@ -12,7 +12,7 @@ STATS_VALUE_CLASS_SOUP = "div.nohm4uA0k9j71NMyNuzL"
 STAR_NAME_CLASS = "Ge68L6q7HYFPnKWBVagq"
 STAR_VOTE_CLASS = "wgJVUNsyjXu6Uxw905ah"
 
-SEASSON_LIST_BTN_CLASS = "dHKpGiMJzb7k67eMw5SZ"
+season_LIST_BTN_CLASS = "dHKpGiMJzb7k67eMw5SZ"
 YEAR_SEASON_NAME_CLASS = "bfA2rUSWqJO164zLByUR"
 
 CALENDAR_TABLE_ID = "ListCalendar"

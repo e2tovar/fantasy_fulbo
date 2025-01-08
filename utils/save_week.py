@@ -1,17 +1,15 @@
+from database.team_results import TeamResultsManager
+from database.team_stats import TeamStatsManager
+from database.player_statistics import PlayerStatisticsManager
+
 import pandas as pd
 import rapidfuzz.process as rfuzz
 
-from database.player_statistics import PlayerStatisticsManager
-from database.players import PlayerManager
-from database.team_results import TeamResultsManager
 
 
-def save_week_from_df(df: pd.DataFrame):
-    # obtenemos player_id
-    pm = PlayerManager()
-    player_ids = pm.get_fantasyname_id_dict()
-    df['id'] = df['name'].map(player_ids)
 
+
+def save_week_players_stats_from_df(df: pd.DataFrame):
     # Si existe un jugador con id null es un nuevo jugador, preguntaremos si se quiere insertar en tabla players
     if df['id'].isnull().any():
         print("Se han encontrado jugadores no registrados en la base de datos")
@@ -56,45 +54,75 @@ def save_week_from_df(df: pd.DataFrame):
 
     # Guardar datos
     # Stats
-    for _, row in df.iterrows():
-        # Stats
-        psm = PlayerStatisticsManager()
-        psm.add_player_statistics(
-            player_id=row['id'],
-            year=row['year'],
-            seasson=row['seasson'],
-            match_week=row['match_week'],
-            team=row['team'],
-            date=row['week_date'],
-            goals=row['goals'],
-            assists=row['assists'],
-            media=row['media'],
-            mvp=row['mvp'],
-            yellow_card=row['yellow_card'],
-            red_card=row['red_card'],
-            votes=row['votes'],
-            total_votes=row['total_votes'],
-            note=row['note']
-        )
+    if df.isnull().values.any():
+        raise ValueError("DataFrame contains missing or null values.")
+    for row in df.itertuples(index=False):
+        try:
+            psm = PlayerStatisticsManager()
+            psm.add_player_statistics(
+                player_id=row.id,
+                year=row.year,
+                season=row.season,
+                match_week=row.match_week,
+                team=row.team,
+                date=row.week_date,
+                goals=row.goals,
+                assists=row.assists,
+                media=row.media,
+                mvp=row.mvp,
+                yellow_card=row.yellow_card,
+                red_card=row.red_card,
+                votes=row.votes,
+                total_votes=row.total_votes,
+                note=row.note
+            )
+        except Exception as e:
+            print(f"Error saving statistics for player {row.name} in match week {row.match_week}: {e}")
 
-    # Team
-    if df['rank'].isnull().all():
-        return
-    trm = TeamResultsManager()
-    # group by team, year(last), seasson(last), match_week(last), goals(sum), rank(last)
-    df['goals'] = df['goals'].astype(int)
-    df = df.sort_values(by='rank')
-    df_team = df.groupby('team').agg({
-        'year': 'last', 'seasson': 'last', 'match_week': 'last', 'goals': 'sum', 'rank': 'last'}).reset_index().copy()
+def save_week_team_result_from_df(df: pd.DataFrame, trm: TeamResultsManager) -> None:
+    """
+    Save team results from a DataFrame to a TeamResultsManager.
 
-    for _, row in df_team.iterrows():
-        trm.add_team_result(
-            year=row['year'],
-            season=row['seasson'],
-            match_week=row['match_week'],
-            team_name=row['team'],
-            goals=row['goals'],
-            goals_against=None,
-            points=None,
-            rank=row['rank']
-        )
+    :param df: DataFrame containing match data.
+    :param trm: Instance of TeamResultsManager.
+    """
+    required_columns = {'game_number', 'year', 'season', 'match_week', 'local', 'away', 'local_goals', 'away_goals'}
+    if not required_columns.issubset(df.columns):
+        raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
+
+    results = [
+        (row['game_number'],
+         row['year'],
+         row['season'],
+         row['match_week'],
+         row['local'],
+         row['away'],
+         row['local_goals'],
+         row['away_goals'])
+        for _, row in df.iterrows()
+    ]
+    try:
+        trm.add_team_results_week(results)
+    except Exception as e:
+        print(f"Error saving team results batch: {e}")
+
+def save_week_team_stats_from_df(df: pd.DataFrame, tsm: TeamStatsManager) -> None:
+    """
+    Save team statistics from a DataFrame to a TeamStatsManager.
+
+    :param df: DataFrame containing team statistics.
+    :param tsm: Instance of TeamStatsManager.
+    """
+    required_columns = {'year', 'season', 'match_week', 'team', 'goals', 'goals_against', 'points', 'rank'}
+    if not required_columns.issubset(df.columns):
+        raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
+
+    stats = [
+        (row['year'], row['season'], row['match_week'], row['team'], row['goals'], row['goals_against'],
+         row['points'], row['rank'])
+        for _, row in df.iterrows()
+    ]
+    try:
+        tsm.add_team_stats_week(stats)
+    except Exception as e:
+        print(f"Error saving team stats batch: {e}")

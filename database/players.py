@@ -3,54 +3,58 @@ import pandas as pd
 
 
 class PlayerManager(DatabaseManager):
+    # Define class-level constants for column names
+    ID = "id"
+    NAME_EXCEL = "name_excel+"
+    NAME_APP = "name_app"
+    POSITION = "position"
+    PRICE = "price"
+
     def create_table(self):
-        # playerstable. Total Statistics
-        self.execute_query("""
+        self.execute_query(f"""
             CREATE TABLE IF NOT EXISTS players(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                name_fantasy TEXT NO NULL,
-                position TEXT NOT NULL,
-                price REAL NOT NULL
+                {self.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                {self.NAME_EXCEL} TEXT NOT NULL,
+                {self.NAME_APP} TEXT NOT NULL,
+                {self.POSITION} TEXT NOT NULL,
+                {self.PRICE} REAL NOT NULL
             )
         """)
 
-    def delete_table(self):
-        return super().delete_table("players")
-
     def get_name_id_dict(self):
-        """
-        Devuelve un diccionario con el mapeo de cada jugador y su ID
-        """
-        query = "SELECT name, id FROM players"
+        query = f"SELECT {self.NAME_EXCEL}, {self.ID} FROM players"
         players = self.fetch_query(query)
-        return {players[0]: players[1] for players in players}
+        return {player[0]: player[1] for player in players}
 
     def get_fantasyname_id_dict(self):
-        """
-        Devuelve un diccionario con el mapeo de cada jugador y su ID
-        """
-        query = "SELECT name_fantasy, id FROM players"
+        query = f"SELECT {self.NAME_APP}, {self.ID} FROM players"
         players = self.fetch_query(query)
-        return {players[0]: players[1] for players in players}
+        return {player[0]: player[1] for player in players}
 
     def add_player(self, name, name_fantasy, position, price):
-        query = "INSERT INTO players(name, name_fantasy, position, price) VALUES (?, ?, ?, ?) RETURNING id"
+        allowed_positions = {"Delantero", "Mediocampo", "Defensor"}
+        if price < 0:
+            raise ValueError("Price cannot be negative")
+        if position not in allowed_positions:
+            raise ValueError(f"Invalid position: {position}")
+        query = f"INSERT INTO players({self.NAME_EXCEL}, {self.NAME_APP}, {self.POSITION}, {self.PRICE}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
         id = self.execute_query(query, (name, name_fantasy, position, price))
         return id
 
-    def get_all_players(self) -> pd.DataFrame:
-        query = "SELECT * FROM players"
-        return pd.read_sql_query(sql=query, con=self.engine, index_col="id")
-
     def update_player_price(self, player_id, price):
-        query = """
+        if price < 0:
+            raise ValueError("Price cannot be negative")
+        query = f"""
             UPDATE players
-            SET price = ?
-            WHERE id = ?
+            SET {self.PRICE} = ?
+            WHERE {self.ID} = ?
         """
         self.execute_query(query, (price, player_id))
 
+    def get_all_players(self) -> pd.DataFrame:
+        query = "SELECT * FROM players"
+        return pd.read_sql_query(sql=query, con=self.engine, index_col=self.ID)
+
     def delete_player(self, player_id):
-        query = "DELETE FROM players WHERE id = ?"
+        query = f"DELETE FROM players WHERE {self.ID} = ?"
         self.execute_query(query, (player_id,))

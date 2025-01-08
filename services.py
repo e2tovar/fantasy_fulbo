@@ -1,54 +1,56 @@
-from typing import Dict
+from typing import List
 import pandas as pd
-from rapidfuzz import process
 
-from config.settings import JORNADA_PATH
-from utils.procesa_nombres import pre_procesa_nombres
+from config.settings import WEEK_PATH
+from utils.get_data_from_excel import read_excel_teams_results, read_excel_players
+from utils.save_week import save_week_players_stats_from_df, save_week_team_stats_from_df, save_week_team_result_from_df
 
-
-def load_week_from_excel(file_path, match_week, season, player_mapping: Dict):
-    """
-    Carga los datos de la jornada. Esta es una función crucial
-    """
-
-    df_players= pd.read_excel(file_path, sheet_name='Registro', skiprows=1)
-
-    df_resultado = pd.read_excel(file_path, skiprows=18, sheet_name='Partido', usecols="B:J")
+from database.player_statistics import PlayerStatisticsManager
+from database.team_results import TeamResultsManager
+from database.team_stats import TeamStatsManager
 
 
-    week_data = []
-    for _, row in df.iterrows():
-        week_data.append((
-            row['playersID'],  # Foreign key
-            season,
-            match_week,
-            row['Goals'],
-            row['Assists'],
-            row['Clean Sheets'],
-            row['Team Position']
-        ))
+class WeekDataManager:
+    def __init__(self, file_path: str, year: int, season: str, match_week: int):
+        self.file_path = file_path
+        self.year = year
+        self.season = season
+        self.match_week = match_week
+        self.trm = TeamResultsManager()
+        self.tsm = TeamStatsManager()
 
-    # Step 5: Insert data into the week table
-    query = """
-        INSERT INTO week (player_id, season, match_week, goals, assists, clean_sheets, team_position)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """
-    for record in week_data:
-        execute_query(query, record)
+    def upload_week(self):
+        """
+        Carga los datos de la jornada. Esta es una función crucial
+        """
+        # Load teams results
+        df_resultado, df_stats = read_excel_teams_results(self.file_path)
 
-    print(f"Match week {match_week} for season {season} loaded successfully.")
+        # Add metadata to DataFrames
+        df_stats['year'] = self.year
+        df_stats['season'] = self.season
+        df_stats['match_week'] = self.match_week
+
+        df_resultado['match_week'] = self.match_week
+        df_resultado['year'] = self.year
+        df_resultado['season'] = self.season
+
+        # Save data using the manager instances
+        save_week_team_result_from_df(df_resultado, self.trm)
+        save_week_team_stats_from_df(df_stats, self.tsm)
+
+        print(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
+
+    @staticmethod
+    def calcular_ranking(jugadores: List):
+        return sorted(jugadores, key=lambda x: x.puntos, reverse=True)
 
 
-def load_round_player(all_player: pd.DataFrame):
-    excel_file = JORNADA_PATH
-    round_players= pd.read_excel(excel_file, skiprows=1, sheet_name='Registro')
+if __name__ == "__main__":
+    file_path = WEEK_PATH
+    year = 2025
+    season = 1
+    match_week = 1
 
-
-def update_stats_by_round():
-    # Read the last round excel and update stats
-    excel_file = JORNADA_PATH
-    pd.read_excel(excel_file, index_col=1, skiprows=18, sheet_name='Partido')
-
-
-def calcular_ranking(jugadores):
-    return sorted(jugadores, key=lambda x: x.puntos, reverse=True)
+    week_data_manager = WeekDataManager(file_path, year, season, match_week)
+    week_data_manager.upload_week()
