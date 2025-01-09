@@ -1,4 +1,4 @@
-from services import fuzzy_match_names
+from services.week_data_manager import fuzzy_match_names
 
 def test_fuzzy_match_names():
     # Mock Excel names

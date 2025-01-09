@@ -68,11 +68,7 @@ class TeamResultsManager(DatabaseManager):
                 raise TypeError("Each field in the result tuple must be of type int or str.")
 
         # Delete existing results for the same match to avoid duplicates
-        query = """
-            DELETE FROM team_results
-            WHERE year = ? AND season = ? AND match_week = ?
-        """
-        self.execute_query(query, (result[1], result[2], result[3]))
+        self.delete_week_results(result[1], result[2], result[3])
 
         query = f"""
             INSERT INTO team_results

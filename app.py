@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from database.player_statistics import PlayerStatisticsManager
-from services import upload_week
+from services.week_data_manager import upload_week
 
 # Configuración inicial
 st.title("Fantasy del fulbol")

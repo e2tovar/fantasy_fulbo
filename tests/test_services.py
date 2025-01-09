@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 
-from services import upload_week
+from services.week_data_manager import upload_week
 
 
 class TestLoadWeek(unittest.TestCase):

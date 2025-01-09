@@ -41,9 +41,12 @@ class WeekDataManager:
 
         print(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
 
-    @staticmethod
-    def calcular_ranking(jugadores: List):
-        return sorted(jugadores, key=lambda x: x.puntos, reverse=True)
+    def delete_week(self):
+        """
+        Elimina los datos de la jornada.
+        """
+        self.trm.delete_week_results(self.year, self.season, self.match_week)
+        self.tsm.delete_week_stats(self.year, self.season, self.match_week)
 
 
 if __name__ == "__main__":
