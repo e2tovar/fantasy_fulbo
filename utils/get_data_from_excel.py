@@ -4,7 +4,15 @@ import pandas as pd
 def read_excel_teams_results(file_path):
     # Lee team resultados. Tabla 1
     # -----------------------------------------------------------------------------------------------------------------
-    df_resultado = pd.read_excel(file_path, sheet_name='Partido', skiprows=3, usecols='B:G')
+    try:
+        df_resultado = pd.read_excel(file_path, sheet_name='Partido', skiprows=3, usecols='B:G')
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
     df_resultado.columns = ['local', 'vs', 'away', 'local_goals', '-', 'away_goals']
     df_resultado = df_resultado.drop(['vs', '-'], axis=1)
     df_resultado.dropna(inplace=True)
@@ -12,8 +20,8 @@ def read_excel_teams_results(file_path):
     df_resultado['game_number'] = df_resultado.index + 1
 
     # to int
-    df_resultado['local_goals'] = df_resultado['local_goals'].astype(int)
-    df_resultado['away_goals'] = df_resultado['away_goals'].astype(int)
+    df_resultado['local_goals'] = pd.to_numeric(df_resultado['local_goals'], errors='coerce').fillna(0).astype(int)
+    df_resultado['away_goals'] = pd.to_numeric(df_resultado['away_goals'], errors='coerce').fillna(0).astype(int)
 
     # Obtenemos team stats de la tabla de resultados. Tabla 2
     # -----------------------------------------------------------------------------------------------------------------
@@ -22,6 +30,8 @@ def read_excel_teams_results(file_path):
     # add columns
     for team in teams:
         df_stats[team] = 0
+
+    df_stats['autogol'] = 0
 
     df_stats['local_points'] = df_stats.apply(
         lambda x: 3 if x['local_goals'] > x['away_goals']
@@ -45,15 +55,50 @@ def read_excel_teams_results(file_path):
     return df_resultado, df_stats
 
 
-def read_excel_players():
+def read_excel_players(file_path):
     # Lee tabla de players stats. Tabla 3
     # -----------------------------------------------------------------------------------------------------------------
-    df_player_stats = pd.read_excel(file_path, skiprows=3, sheet_name='Partido', usecols="L:O")
+    # Primero recopilamos todos los nombres desde la hoja 'Registro'
+    try:
+        df_names = pd.read_excel(file_path, sheet_name='Registro', skiprows=1)
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred while reading the Excel file: {e}")
+        return None
+
+    df_names.drop(columns=['Orden'], inplace=True)
+    df_names = df_names.iloc[:-3, :].copy()
+    df_names.columns = ['name', 'team']
+
+    try:
+        df_player_stats = pd.read_excel(file_path, skiprows=3, sheet_name='Partido', usecols="L:O")
+    except Exception as e:
+        print(f"An error occurred while reading the player stats: {e}")
+        return None
+
     df_player_stats.columns = ['name', 'team', 'goals', 'assists']
     df_player_stats.dropna(how='all', inplace=True, subset=['goals', 'assists'])
-    df_player_stats.fillna(0, inplace=True)
-    # to int
-    df_player_stats['goals'] = df_player_stats['goals'].astype(int)
-    df_player_stats['assists'] = df_player_stats['assists'].astype(int)
 
-    return df_player_stats
+    df_stats = df_player_stats.merge(df_names, on=['name', 'team'], how='outer').copy()
+
+    # Maneja autogoles. Localiza palabra Autogol en la columna 'name'
+    autogol_indices = df_stats[df_stats['name'].str.startswith('Autogol')].index
+    for index in autogol_indices:
+        print(f"Parece que hay un Autogol: {df_stats.loc[index, 'name']}")
+        print("Selecciona el autor de este autogol: ")
+        print(df_names)
+        index_name = input("Selecciona un número de los anteriores")
+        name = df_names.loc[int(index_name), 'name']
+        df_stats.loc[df_stats['name'] == name, 'autogol'] = 1
+    df_stats.drop(autogol_indices, inplace=True)
+
+    df_stats.fillna(0, inplace=True)
+
+    # to int
+    df_stats['goals'] = df_stats['goals'].astype(int)
+    df_stats['assists'] = df_stats['assists'].astype(int)
+    df_stats['autogol'] = df_stats['autogol'].astype(int)
+
+    return df_stats
