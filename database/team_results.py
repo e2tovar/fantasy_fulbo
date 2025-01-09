@@ -8,7 +8,8 @@ class TeamResultsManager(DatabaseManager):
     SEASON = "season"
     MATCH_WEEK = "match_week"
     GAME_NUMBER = "game_number"
-    LOCAL_NAME = "local"
+    LOCAL = "local"
+    AWAY = "away"
     away = "away"
     LOCAL_GOALS = "local_goals"
     AWAY_GOALS = "away_goals"
@@ -21,7 +22,7 @@ class TeamResultsManager(DatabaseManager):
                 {self.YEAR} INTEGER NOT NULL,
                 {self.SEASON} INTEGER NOT NULL,
                 {self.MATCH_WEEK} INTEGER NOT NULL,
-                {self.LOCAL_NAME} VARCHAR(50),
+                {self.LOCAL} VARCHAR(50),
                 {self.away} VARCHAR(50),
                 {self.LOCAL_GOALS} INTEGER,
                 {self.AWAY_GOALS} INTEGER
@@ -46,7 +47,7 @@ class TeamResultsManager(DatabaseManager):
             {self.YEAR},
             {self.SEASON},
             {self.MATCH_WEEK},
-            {self.LOCAL_NAME},
+            {self.LOCAL},
             {self.away},
             {self.LOCAL_GOALS},
             {self.AWAY_GOALS})
@@ -76,7 +77,7 @@ class TeamResultsManager(DatabaseManager):
             {self.YEAR},
             {self.SEASON},
             {self.MATCH_WEEK},
-            {self.LOCAL_NAME},
+            {self.LOCAL},
             {self.away},
             {self.LOCAL_GOALS},
             {self.AWAY_GOALS})

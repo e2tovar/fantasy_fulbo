@@ -54,6 +54,32 @@ class PlayerStatisticsManager(DatabaseManager):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         self.execute_query(query, (player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card, votes, total_votes, note))
 
+    def add_player_statistics_week_from_df(self, results):
+        """
+        Add multiple player stats from the excel.
+
+        :param results: List of tuples, each containing (player_id, year, season, match_week, team, goals, assists)
+        """
+        # Validate results structure and data types
+        for result in results:
+            if not isinstance(result, tuple) or len(result) != 7:
+                raise ValueError("Each result must be a tuple with 7 elements.")
+            if not all(isinstance(field, (int, str)) for field in result):
+                raise TypeError("Each field in the result tuple must be of type int or str.")
+
+        # Collect unique (year, season, match_week) combinations to delete existing stats
+        unique_weeks = set((result[1], result[2], result[3]) for result in results)
+        for year, season, match_week in unique_weeks:
+            self.delete_week_stats(year, season, match_week)
+
+        # Prepare the query for inserting new statistics
+        query = f"""
+            INSERT INTO player_statistics
+            ({self.PLAYER_ID}, {self.YEAR}, {self.SEASON}, {self.MATCH_WEEK}, {self.TEAM}, {self.GOALS}, {self.ASSISTS})
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        self.execute_queries(query, results)
+
     def get_general_statistics(self):
         query = f"""
             SELECT
@@ -79,3 +105,7 @@ class PlayerStatisticsManager(DatabaseManager):
             WHERE ps.{self.MATCH_WEEK} = ?"""
 
         return self.fetch_query(query, (week,))
+
+    def delete_week_stats(self, year, season, match_week):
+        query = f"DELETE FROM player_statistics WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ?"
+        self.execute_query(query, (year, season, match_week))

@@ -7,7 +7,7 @@ class TeamStatsManager(DatabaseManager):
     YEAR = "year"
     SEASON = "season"
     MATCH_WEEK = "match_week"
-    TEAM_NAME = "team_name"
+    TEAM = "team"
     GOALS = "goals"
     GOALS_AGAINST = "goals_against"
     POINTS = "points"
@@ -20,7 +20,7 @@ class TeamStatsManager(DatabaseManager):
                 {self.YEAR} INTEGER NOT NULL,
                 {self.SEASON} INTEGER NOT NULL,
                 {self.MATCH_WEEK} INTEGER NOT NULL,
-                {self.TEAM_NAME} VARCHAR(10),
+                {self.TEAM} VARCHAR(10),
                 {self.GOALS} INTEGER,
                 {self.GOALS_AGAINST} INTEGER,
                 {self.POINTS} INTEGER,
@@ -31,32 +31,32 @@ class TeamStatsManager(DatabaseManager):
     def delete_table(self):
         return super().delete_table("team_stats")
 
-    def add_team_stats(self, year, season, match_week, team_name, goals, goals_against, points, rank):
+    def add_team_stats(self, year, season, match_week, team, goals, goals_against, points, rank):
         # Delete first if exists
         query = f"""
             DELETE FROM team_stats
-            WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ? AND {self.TEAM_NAME} = ?
+            WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ? AND {self.TEAM} = ?
         """
-        self.execute_query(query, (year, season, match_week, team_name))
+        self.execute_query(query, (year, season, match_week, team))
 
         self.execute_query(f"""
             INSERT INTO team_stats
             ({self.YEAR},
             {self.SEASON},
             {self.MATCH_WEEK},
-            {self.TEAM_NAME},
+            {self.TEAM},
             {self.GOALS},
             {self.GOALS_AGAINST},
             {self.POINTS}, {self.RANK})
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (year, season, match_week, team_name, goals, goals_against, points, rank))
+        """, (year, season, match_week, team, goals, goals_against, points, rank))
 
     def add_team_stats_week(self, stats):
         """
         Add multiple team statistics in a single batch operation.
 
         :param stats: List of tuples,
-        each containing (year, season, match_week, team_name, goals, goals_against, points, rank)
+        each containing (year, season, match_week, team, goals, goals_against, points, rank)
         """
 
         # Validate results structure and data types
@@ -74,7 +74,7 @@ class TeamStatsManager(DatabaseManager):
             ({self.YEAR},
             {self.SEASON},
             {self.MATCH_WEEK},
-            {self.TEAM_NAME},
+            {self.TEAM},
             {self.GOALS},
             {self.GOALS_AGAINST},
             {self.POINTS},
@@ -102,8 +102,8 @@ class TeamStatsManager(DatabaseManager):
             WHERE {self.YEAR} = ? AND {self.SEASON} = ?
         """, (year, season))
 
-    def delete_team_stats(self, year, season, match_week, team_name):
+    def delete_team_stats(self, year, season, match_week, team):
         self.execute_query(f"""
             DELETE FROM team_stats
-            WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ? AND {self.TEAM_NAME} = ?
-        """, (year, season, match_week, team_name))
+            WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ? AND {self.TEAM} = ?
+        """, (year, season, match_week, team))
