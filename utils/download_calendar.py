@@ -104,18 +104,18 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
         df['asistencias'] = 0
 
     if season == 0:
-        df['rank'] = None
+        df['position'] = None
         df['team'] = None
     else:
-        df['rank'] = df['pts'].astype(int).rank(ascending=False, method='dense')
-        # team en dependencia del rank. Asignamos un color por cada rank
+        df['position'] = df['pts'].astype(int).rank(ascending=False, method='dense')
+        # team en dependencia de la 'position'. Asignamos un color por cada 'position'
         colors = {
             1: 'Amarillo',
             2: 'Azul',
             3: 'Rojo',
             4: 'Negro'
             }
-        df['team'] = df['rank'].astype(int).map(colors)
+        df['team'] = df['position'].astype(int).map(colors)
 
     # Nota
     df['note'] = """
@@ -127,10 +127,10 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
 
     df = df[[
         'nombre', 'goles', 'asistencias', 'media', 'mvp', 'amarillas',
-        'rojas', 'votes', 'total_votes', 'team', 'rank', 'note']].copy()
+        'rojas', 'votes', 'total_votes', 'team', 'position', 'note']].copy()
     df.columns = [
         'name', 'goals', 'assists', 'media', 'mvp', 'yellow_card', 'red_card',
-        'votes', 'total_votes', 'team', 'rank', 'note']
+        'votes', 'total_votes', 'team', 'position', 'note']
 
     df['year'] = year
     df['season'] = season

@@ -1,6 +1,7 @@
 from .database import DatabaseManager
 import pandas as pd
 
+
 class PlayerManager(DatabaseManager):
     # Define class-level constants for column names
     ID = "id"
@@ -12,8 +13,8 @@ class PlayerManager(DatabaseManager):
     def __init__(self):
         super().__init__()
         # Pre-fetch and cache the mappings
-        self._excel_name_id_map = self._fetch_excel_name_id_map()
-        self._app_name_id_map = self._fetch_app_name_id_map()
+        self.excel_name_id_map = self._fetch_excel_name_id_map()
+        self.app_name_id_map = self._fetch_app_name_id_map()
 
     def _fetch_excel_name_id_map(self):
         query = f"SELECT {self.NAME_EXCEL}, {self.ID} FROM players"
@@ -53,8 +54,8 @@ class PlayerManager(DatabaseManager):
         query = f"INSERT INTO players({self.NAME_EXCEL}, {self.NAME_APP}, {self.POSITION}, {self.PRICE}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
         id = self.execute_query(query, (name, name_fantasy, position, price))
         # Invalidate caches and refresh
-        self._excel_name_id_map = self._fetch_excel_name_id_map()
-        self._app_name_id_map = self._fetch_app_name_id_map()
+        self.excel_name_id_map = self._fetch_excel_name_id_map()
+        self.app_name_id_map = self._fetch_app_name_id_map()
         return id
 
     def update_player_price(self, player_id, price):
@@ -67,16 +68,17 @@ class PlayerManager(DatabaseManager):
         """
         self.execute_query(query, (price, player_id))
         # Invalidate caches and refresh
-        self._excel_name_id_map = self._fetch_excel_name_id_map()
-        self._app_name_id_map = self._fetch_app_name_id_map()
+        self.excel_name_id_map = self._fetch_excel_name_id_map()
+        self.app_name_id_map = self._fetch_app_name_id_map()
 
     def delete_player(self, player_id):
         query = f"DELETE FROM players WHERE {self.ID} = ?"
         self.execute_query(query, (player_id,))
         # Invalidate caches and refresh
-        self._excel_name_id_map = self._fetch_excel_name_id_map()
-        self._app_name_id_map = self._fetch_app_name_id_map()
+        self.excel_name_id_map = self._fetch_excel_name_id_map()
+        self.app_name_id_map = self._fetch_app_name_id_map()
 
     def get_all_players(self) -> pd.DataFrame:
         query = "SELECT * FROM players"
         return pd.read_sql_query(sql=query, con=self.engine, index_col=self.ID)
+

@@ -12,6 +12,7 @@ class PlayerStatisticsManager(DatabaseManager):
     DATE = "date"
     TEAM = "team"
     GOALS = "goals"
+    OWN_GOALS = "own_goals"
     ASSISTS = "assists"
     MVP = "mvp"
     MEDIA = "media"
@@ -32,6 +33,7 @@ class PlayerStatisticsManager(DatabaseManager):
                 {self.DATE} DATE,
                 {self.TEAM} VARCHAR,
                 {self.GOALS} INTEGER NOT NULL,
+                {self.OWN_GOALS} INTEGER NOT NULL,
                 {self.ASSISTS} INTEGER NOT NULL,
                 {self.MVP} INTEGER NOT NULL,
                 {self.MEDIA} FLOAT NOT NULL,
@@ -54,16 +56,40 @@ class PlayerStatisticsManager(DatabaseManager):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         self.execute_query(query, (player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card, votes, total_votes, note))
 
-    def add_player_statistics_week_from_df(self, results):
+    def add_player_statistics_week_from_df(self, df):
         """
         Add multiple player stats from the excel.
-
-        :param results: List of tuples, each containing (player_id, year, season, match_week, team, goals, assists)
+        :param results: List of tuples, each containing
+        (player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card,
+        votes, total_votes, note)
         """
+
+        results = [
+            (
+                row.player_id,
+                row.year,
+                row.season,
+                row.match_week,
+                row.date,
+                row.team,
+                row.goals,
+                row.own_goals,
+                row.assists,
+                row.mvp,
+                row.media,
+                row.yellow_card,
+                row.red_card,
+                row.votes,
+                row.total_votes,
+                row.note
+            )
+            for row in df.itertuples(index=False)
+        ]
+
         # Validate results structure and data types
         for result in results:
-            if not isinstance(result, tuple) or len(result) != 7:
-                raise ValueError("Each result must be a tuple with 7 elements.")
+            if not isinstance(result, tuple) or len(result) != 16:
+                raise ValueError("Each result must be a tuple with 16 elements.")
             if not all(isinstance(field, (int, str)) for field in result):
                 raise TypeError("Each field in the result tuple must be of type int or str.")
 
@@ -75,8 +101,23 @@ class PlayerStatisticsManager(DatabaseManager):
         # Prepare the query for inserting new statistics
         query = f"""
             INSERT INTO player_statistics
-            ({self.PLAYER_ID}, {self.YEAR}, {self.SEASON}, {self.MATCH_WEEK}, {self.TEAM}, {self.GOALS}, {self.ASSISTS})
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ({self.PLAYER_ID},
+             {self.YEAR},
+             {self.SEASON},
+             {self.MATCH_WEEK},
+             {self.DATE},
+             {self.TEAM},
+             {self.GOALS},
+             {self.OWN_GOALS},
+             {self.ASSISTS},
+             {self.MVP},
+             {self.MEDIA},
+             {self.YELLOW_CARD},
+             {self.RED_CARD},
+             {self.VOTES},
+             {self.TOTAL_VOTES},
+             {self.NOTE})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.execute_queries(query, results)
 

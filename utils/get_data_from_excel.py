@@ -31,7 +31,7 @@ def read_excel_teams_results(file_path):
     for team in teams:
         df_stats[team] = 0
 
-    df_stats['autogol'] = 0
+    df_stats['own_goal'] = 0
 
     df_stats['local_points'] = df_stats.apply(
         lambda x: 3 if x['local_goals'] > x['away_goals']
@@ -49,13 +49,13 @@ def read_excel_teams_results(file_path):
     df_stats = pd.concat([local_stats, away_stats])
     df_stats = df_stats.groupby('team').sum().reset_index()
 
-    # get rank
-    df_stats['rank'] = df_stats['points'].rank(method='min', ascending=False).astype(int)
+    # get posicion
+    df_stats['position'] = df_stats['points'].rank(method='min', ascending=False).astype(int)
 
     return df_resultado, df_stats
 
 
-def read_excel_players(file_path):
+def read_excel_players_stats(file_path):
     # Lee tabla de players stats. Tabla 3
     # -----------------------------------------------------------------------------------------------------------------
     # Primero recopilamos todos los nombres desde la hoja 'Registro'
@@ -91,7 +91,7 @@ def read_excel_players(file_path):
         print(df_names)
         index_name = input("Selecciona un número de los anteriores")
         name = df_names.loc[int(index_name), 'name']
-        df_stats.loc[df_stats['name'] == name, 'autogol'] = 1
+        df_stats.loc[df_stats['name'] == name, 'own_goals'] = df_stats.loc[index, 'goals']
     df_stats.drop(autogol_indices, inplace=True)
 
     df_stats.fillna(0, inplace=True)
@@ -99,6 +99,6 @@ def read_excel_players(file_path):
     # to int
     df_stats['goals'] = df_stats['goals'].astype(int)
     df_stats['assists'] = df_stats['assists'].astype(int)
-    df_stats['autogol'] = df_stats['autogol'].astype(int)
+    df_stats['own_goals'] = df_stats['own_goals'].astype(int)
 
     return df_stats

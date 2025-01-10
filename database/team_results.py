@@ -55,12 +55,25 @@ class TeamResultsManager(DatabaseManager):
         """
         self.execute_query(query, (game_number, year, season, match_week, local, away, local_goals, away_goals))
 
-    def add_team_results_week(self, results):
+    def add_team_results_week(self, df):
         """
         Add multiple team results in a single batch operation.
 
         :param results: List of tuples, each containing (year, season, match_week, local, away, local_goals, away_goals)
         """
+
+        results = [
+            (row.game_number,
+                row.year,
+                row.season,
+                row.match_week,
+                row.local,
+                row.away,
+                row.local_goals,
+                row.away_goals)
+            for _, row in df.iterrows()
+        ]
+
         # Validate results structure and data types
         for result in results:
             if not isinstance(result, tuple) or len(result) != 8:

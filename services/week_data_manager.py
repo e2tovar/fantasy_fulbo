@@ -1,8 +1,8 @@
-from typing import List
+import logging
 import pandas as pd
 
-from config.settings import WEEK_PATH
-from utils.get_data_from_excel import read_excel_teams_results, read_excel_players
+from utils.get_data_from_excel import read_excel_teams_results, read_excel_players_stats
+from utils.get_data_from_app import scrap_app_last_week_data
 
 from database.player_statistics import PlayerStatisticsManager
 from database.team_results import TeamResultsManager
@@ -11,11 +11,12 @@ from database.players import PlayerManager
 
 
 class WeekDataManager:
-    def __init__(self, file_path: str, year: int, season: str, match_week: int):
+    def __init__(self, file_path: str, year: int, season: str, match_week: int, week_note: str = ''):
         self.file_path = file_path
         self.year = year
         self.season = season
         self.match_week = match_week
+        self.week_note = week_note
         self.trm = TeamResultsManager()
         self.tsm = TeamStatsManager()
         self.psm = PlayerStatisticsManager()
@@ -28,19 +29,14 @@ class WeekDataManager:
         :param tsm: Instance of TeamStatsManager.
         """
         required_columns = {tsm.YEAR, tsm.SEASON, tsm.MATCH_WEEK, tsm.TEAM, tsm.GOALS, tsm.GOALS_AGAINST,
-                            tsm.POINTS, tsm.RANK}
+                            tsm.POINTS, tsm.POSITION}
         if not required_columns.issubset(df.columns):
             raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
 
-        stats = [
-            (row['year'], row['season'], row['match_week'], row['team'], row['goals'], row['goals_against'],
-                row['points'], row['rank'])
-            for _, row in df.iterrows()
-        ]
         try:
-            tsm.add_team_stats_week(stats)
+            tsm.add_team_stats_week(df)
         except Exception as e:
-            print(f"Error saving team stats batch: {e}")
+            logging.error(f"Error saving team stats batch: {e}")
 
     def __save_week_team_result_from_df(self, df: pd.DataFrame, trm: TeamResultsManager) -> None:
         """
@@ -54,21 +50,10 @@ class WeekDataManager:
         if not required_columns.issubset(df.columns):
             raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
 
-        results = [
-            (row['game_number'],
-                row['year'],
-                row['season'],
-                row['match_week'],
-                row['local'],
-                row['away'],
-                row['local_goals'],
-                row['away_goals'])
-            for _, row in df.iterrows()
-        ]
         try:
-            trm.add_team_results_week(results)
+            trm.add_team_results_week(df)
         except Exception as e:
-            print(f"Error saving team results batch: {e}")
+            logging.error(f"Error saving team results batch: {e}")
 
     def __save_week_player_stats_from_df(self, df: pd.DataFrame, psm: PlayerStatisticsManager) -> None:
         """
@@ -77,71 +62,97 @@ class WeekDataManager:
         :param df: DataFrame containing player statistics.
         :param psm: Instance of PlayerStatisticsManager.
         """
-        required_columns = {psm.PLAYER_ID, psm.YEAR, psm.SEASON, psm.MATCH_WEEK, psm.TEAM, psm.GOALS,
-                            psm.ASSISTS}
+        required_columns = {
+            psm.PLAYER_ID,
+            psm.YEAR,
+            psm.SEASON,
+            psm.MATCH_WEEK,
+            psm.DATE,
+            psm.TEAM,
+            psm.GOALS,
+            psm.OWN_GOALS,
+            psm.ASSISTS,
+            psm.MVP,
+            psm.MEDIA,
+            psm.YELLOW_CARD,
+            psm.RED_CARD,
+            psm.VOTES,
+            psm.TOTAL_VOTES,
+            psm.NOTE
+            }
         if not required_columns.issubset(df.columns):
             raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
 
-        results = [
-            (row['player_id'], row['year'], row['season'], row['match_week'], row['team'], row['goals'],
-                row['assists'])
-            for _, row in df.iterrows()]
+        # get only required columns
+        df = df[list(required_columns)]
 
         try:
-            psm.add_player_statistics_week_from_df(results)
+            psm.add_player_statistics_week_from_df(df)
         except Exception as e:
-            print(f"Error saving player statistics batch: {e}")
+            logging.error(f"Error saving player statistics batch: {e}")
 
-    def upload_week(self):
+    def upload_week(self) -> None:
         """
         Carga los datos de la jornada. Esta es una función crucial
         """
-        # TEAMS
-        df_resultado, df_stats = read_excel_teams_results(self.file_path)
+        df_resultado, df_stats = self.__read_team_data()
+        df_players = self.__read_player_data()
 
-        # Add metadata to DataFrames
+        self.__save_week_team_result_from_df(df_resultado, self.trm)
+        self.__save_week_team_stats_from_df(df_stats, self.tsm)
+        self.__save_week_player_stats_from_df(df_players, self.psm)
+
+        logging.info(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
+
+    def __read_team_data(self):
+        df_resultado, df_stats = read_excel_teams_results(self.file_path)
         df_stats['year'] = self.year
         df_stats['season'] = self.season
         df_stats['match_week'] = self.match_week
-
         df_resultado['match_week'] = self.match_week
         df_resultado['year'] = self.year
         df_resultado['season'] = self.season
+        return df_resultado, df_stats
 
-        # Save data using the manager instances
-        self.__save_week_team_result_from_df(df_resultado, self.trm)
-        self.__save_week_team_stats_from_df(df_stats, self.tsm)
+    def __read_player_data(self) -> pd.DataFrame:
+        logger = logging.getLogger(__name__)
 
-        # PLAYERS from Excel
-        df_players = read_excel_players(self.file_path)
-        # map excel names to id
+        # From excel
+        try:
+            df_excel = read_excel_players_stats(self.file_path)
+        except Exception as e:
+            logger.exception(f"Failed to read player data from Excel: {e}")
+            df_excel = pd.DataFrame()
+
+        # from app
+        try:
+            df_app = scrap_app_last_week_data(note=self.week_note)
+        except Exception as e:
+            logger.exception(f"Failed to scrape player data from app: {e}")
+            df_app = pd.DataFrame()
+
+        # drop app not used columns
+        df_app.drop(columns=['team', 'goals', 'assists', 'position'], inplace=True)
+
+        # mapping to id
         pm = PlayerManager()
-        players_map = pm._excel_name_id_map
-        df_players['player_id'] = df_players['name'].map(players_map)
-        df_players.drop(columns=['name'], inplace=True)
-        df_players['match_week'] = self.match_week
-        df_players['year'] = self.year
-        df_players['season'] = self.season
+        excel_map = pm.excel_name_id_map
+        app_map = pm.app_name_id_map
+        df_excel['player_id'] = df_excel['name'].map(excel_map)
+        df_excel.drop(columns=['name'], inplace=True)
+        df_app['player_id'] = df_app['name'].map(app_map)
+        df_app.drop(columns=['name'], inplace=True)
 
-        # PLAYERS from App
+        # merge
+        df_players = pd.merge(df_excel, df_app, on=['player_id'], how='outer', validate='one_to_one')
+        if df_players['player_id'].isnull().any():
+            raise ValueError("Merged data contains missing player IDs.")
 
-        self.__save_week_player_stats_from_df(df_players, self.psm)
+        return df_players
 
-        print(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
-
-    def delete_week(self):
+    def delete_week(self) -> None:
         """
         Elimina los datos de la jornada.
         """
         self.trm.delete_week_results(self.year, self.season, self.match_week)
         self.tsm.delete_week_stats(self.year, self.season, self.match_week)
-
-
-if __name__ == "__main__":
-    file_path = WEEK_PATH
-    year = 2025
-    season = 1
-    match_week = 1
-
-    week_data_manager = WeekDataManager(file_path, year, season, match_week)
-    week_data_manager.upload_week()

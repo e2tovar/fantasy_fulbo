@@ -11,7 +11,7 @@ class TeamStatsManager(DatabaseManager):
     GOALS = "goals"
     GOALS_AGAINST = "goals_against"
     POINTS = "points"
-    RANK = "rank"
+    POSITION = "position"
 
     def create_table(self):
         self.execute_query(f"""
@@ -24,14 +24,14 @@ class TeamStatsManager(DatabaseManager):
                 {self.GOALS} INTEGER,
                 {self.GOALS_AGAINST} INTEGER,
                 {self.POINTS} INTEGER,
-                {self.RANK} INTEGER
+                {self.POSITION} INTEGER
             )
         """)
 
     def delete_table(self):
         return super().delete_table("team_stats")
 
-    def add_team_stats(self, year, season, match_week, team, goals, goals_against, points, rank):
+    def add_team_stats(self, year, season, match_week, team, goals, goals_against, points, position):
         # Delete first if exists
         query = f"""
             DELETE FROM team_stats
@@ -47,17 +47,29 @@ class TeamStatsManager(DatabaseManager):
             {self.TEAM},
             {self.GOALS},
             {self.GOALS_AGAINST},
-            {self.POINTS}, {self.RANK})
+            {self.POINTS}, {self.POSITION})
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (year, season, match_week, team, goals, goals_against, points, rank))
+        """, (year, season, match_week, team, goals, goals_against, points, position))
 
-    def add_team_stats_week(self, stats):
+    def add_team_stats_week(self, df):
         """
         Add multiple team statistics in a single batch operation.
 
         :param stats: List of tuples,
-        each containing (year, season, match_week, team, goals, goals_against, points, rank)
+        each containing (year, season, match_week, team, goals, goals_against, points, position)
         """
+
+        stats = [
+            (row.year,
+             row.season,
+             row.match_week,
+             row.team,
+             row.goals,
+             row.goals_against,
+             row.points,
+             row.position)
+            for _, row in df.iterrows()
+        ]
 
         # Validate results structure and data types
         for stat in stats:
@@ -78,7 +90,7 @@ class TeamStatsManager(DatabaseManager):
             {self.GOALS},
             {self.GOALS_AGAINST},
             {self.POINTS},
-            {self.RANK})
+            {self.POSITION})
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.execute_queries(query, stats)
