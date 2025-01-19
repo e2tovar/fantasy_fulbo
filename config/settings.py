@@ -1,4 +1,4 @@
-WEEK_PATH = 'data/jornadas/2025/result_season_1_week_1.xlsm'
+WEEK_PATH = 'data/jornadas/2025/result_season_1_week_3.xlsx'
 HEADLESS = True
 
 DASHBOARD_CLASS = "ozKqOrLtcBmCYpsCNU4w"
@@ -17,8 +17,11 @@ STATS_VALUE_CLASS_SOUP = "div.nohm4uA0k9j71NMyNuzL"
 STAR_NAME_CLASS = "Ge68L6q7HYFPnKWBVagq"
 STAR_VOTE_CLASS = "wgJVUNsyjXu6Uxw905ah"
 
-season_LIST_BTN_CLASS = "dHKpGiMJzb7k67eMw5SZ"
+# Calendar Page
+SEASSON_LIST_BTN_CLASS = "dHKpGiMJzb7k67eMw5SZ"
 YEAR_SEASON_NAME_CLASS = "bfA2rUSWqJO164zLByUR"
+YEAR_SEASON_OPTIONS_CLASS = "select__option"
 
+# Home Page
 CALENDAR_TABLE_ID = "ListCalendar"
 CALENDAR_WEEK_CLASS = "T4FET2L5vbM6D9ncwq5S"

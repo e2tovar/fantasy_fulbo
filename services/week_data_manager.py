@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 
 from utils.get_data_from_excel import read_excel_teams_results, read_excel_players_stats
-from utils.get_data_from_app import scrap_app_last_week_data
+from utils.get_data_from_app import scrap_app_week_data
 
 from database.player_statistics import PlayerStatisticsManager
 from database.team_results import TeamResultsManager
@@ -11,8 +11,7 @@ from database.players import PlayerManager
 
 
 class WeekDataManager:
-    def __init__(self, file_path: str, year: int, season: str, match_week: int, week_note: str = ''):
-        self.file_path = file_path
+    def __init__(self, year: int, season: str, match_week: int, week_note: str = ''):
         self.year = year
         self.season = season
         self.match_week = match_week
@@ -20,6 +19,10 @@ class WeekDataManager:
         self.trm = TeamResultsManager()
         self.tsm = TeamStatsManager()
         self.psm = PlayerStatisticsManager()
+        self.file_path = self._build_path()
+
+    def _build_path(self):
+        return f"data/jornadas/{self.year}/result_season_{self.season}_week_{self.match_week}.xlsx"
 
     def __save_week_team_stats_from_df(self, df: pd.DataFrame, tsm: TeamStatsManager) -> None:
         """
@@ -126,20 +129,17 @@ class WeekDataManager:
 
         # from app
         try:
-            df_app = scrap_app_last_week_data(note=self.week_note)
+            df_app = scrap_app_week_data(
+                stats_year=self.year, stats_season=self.season, stats_week=self.match_week, note=self.week_note)
         except Exception as e:
             logger.exception(f"Failed to scrape player data from app: {e}")
             df_app = pd.DataFrame()
-
-        # drop app not used columns
-        df_app.drop(columns=['team', 'goals', 'assists', 'position'], inplace=True)
 
         # mapping to id
         pm = PlayerManager()
         excel_map = pm.excel_name_id_map
         app_map = pm.app_name_id_map
         df_excel['player_id'] = df_excel['name'].map(excel_map)
-        df_excel.drop(columns=['name'], inplace=True)
         df_app['player_id'] = df_app['name'].map(app_map)
         df_app.drop(columns=['name'], inplace=True)
 
@@ -147,6 +147,8 @@ class WeekDataManager:
         df_players = pd.merge(df_excel, df_app, on=['player_id'], how='outer', validate='one_to_one')
         if df_players['player_id'].isnull().any():
             raise ValueError("Merged data contains missing player IDs.")
+
+        df_players['note'] = self.week_note
 
         return df_players
 

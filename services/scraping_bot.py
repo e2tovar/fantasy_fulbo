@@ -7,6 +7,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.webelement import WebElement
+
+from typing import List
+
 
 from config import settings
 
@@ -60,6 +64,18 @@ class ScrapingBot:
         submit_bt = self.driver.find_element(By.ID, "SubmitButton")
         submit_bt.click()
 
+    @staticmethod
+    def _pick_year_season(options: List[WebElement], pick_year, pick_season) -> WebElement:
+        # Option str = [x]er Bimestre - [y] where x=season and y=year
+        for option in options:
+            text = option.text
+            year_text = text.split('-')[0].strip()
+            season_text = text.split('-')[1].strip()
+            if str(pick_year) in year_text and str(pick_season) in season_text:
+                return option
+
+        raise ValueError(f"No se encontró la temporada {pick_season} {pick_year}")
+
     def _extract_names(self, table_element):
         html_content = table_element.get_attribute('outerHTML')
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -100,22 +116,6 @@ class ScrapingBot:
 
         df = df[df['goles'] != '-'].copy()
 
-        if int(year) == 2024 and int(season) in [1, 2]:
-            df['pts'] = df['asistencias']
-            df['asistencias'] = 0
-
-        if season == 0:
-            df['position'] = None
-            df['team'] = None
-        else:
-            df['position'] = df['pts'].astype(int).rank(ascending=False, method='dense')
-            df['team'] = None  # Son agregados desde el excel
-
-        if random_teams:
-            colors = {1: 'Amarillo', 2: 'Azul', 3: 'Rojo', 4: 'Negro'}
-            df['team'] = df['position'].astype(int).map(colors)
-
-        df['note'] = week_note
         column_mapping = {
             'nombre': 'name',
             'goles': 'goals',
@@ -137,8 +137,12 @@ class ScrapingBot:
         df['match_week'] = week
         df['date'] = week_date
 
+        # Tomamos los equipos desde el excel
+        df['yellow_card'] = 0
+        df['red_card'] = 0
+
         # drop p t
-        df.drop(columns=['p', 't'], inplace=True)
+        df.drop(columns=['p', 't', 'goals', 'assists', 'pts'], inplace=True)
 
         return df
 
@@ -175,30 +179,34 @@ class ScrapingBot:
         self.wait.until(EC.presence_of_element_located((By.ID, settings.CALENDAR_TABLE_ID)))
         week_ind, week_date, week_href = self.__week_element_selection(week)
 
-        self.driver.execute_script("window.open('');")
-        self.driver.switch_to.window(self.driver.window_handles[1])
+        print(f"Descargando stats de año {year} - bimestre {season} - jornada {week_ind}")
+
         self.driver.get(week_href)
 
         return self.__scrape_week_data(year, season, week_ind, week_date, week_note=week_note)
 
-    def fetch_last_week_players_statistics(self, week_note=''):
+    def fetch_week_players_statistics(self, stats_year, stats_season, stats_week, week_note=''):
         """
         Retrieves player statistics from the application.
         """
         url = "https://app.sporteasy.net/es/login/?next=https://app.sporteasy.net/es/profile/home/"
 
+        # Home
         self.setup_driver()
         self.login(url)
 
         self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.DASHBOARD_CLASS)))
 
+        # Calendar
         self.driver.get("https://liga-profesional-de-aficionados-al-futbol.sporteasy.net/calendar/list/")
-        self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.season_LIST_BTN_CLASS)))
+        self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.SEASSON_LIST_BTN_CLASS)))
         self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.YEAR_SEASON_NAME_CLASS)))
 
-        year_season = self.driver.find_element(By.CLASS_NAME, settings.YEAR_SEASON_NAME_CLASS).text
-        year = year_season.split(" ")[1]
-        bimester = re.findall(r'\d+', year_season.split(" ")[3])[0]
+        # Click years_season list
+        self.driver.find_element(By.CLASS_NAME, settings.SEASSON_LIST_BTN_CLASS).click()
+        # Options
+        season_options = self.driver.find_elements(By.CLASS_NAME, settings.YEAR_SEASON_OPTIONS_CLASS)
+        # Select year-season
+        self._pick_year_season(season_options, stats_year, stats_season).click()
 
-        print(f"Descargando stats de año {year} - bimestre {bimester}")
-        return self.__download_calendar(year, bimester, week_note=week_note)
+        return self.__download_calendar(stats_year, stats_season, stats_week, week_note=week_note)

@@ -1,11 +1,11 @@
 from services.scraping_bot import ScrapingBot
 
 
-def scrap_app_last_week_data(note=''):
+def scrap_app_week_data(stats_year, stats_season, stats_week, note=''):
 
     bot = ScrapingBot()
 
-    player_app_df = bot.fetch_last_week_players_statistics(week_note=note)
+    player_app_df = bot.fetch_week_players_statistics(stats_year, stats_season, stats_week, week_note=note)
 
     bot.teardown_driver()
 

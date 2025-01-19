@@ -58,9 +58,9 @@ def read_excel_teams_results(file_path):
 def read_excel_players_stats(file_path):
     # Lee tabla de players stats. Tabla 3
     # -----------------------------------------------------------------------------------------------------------------
-    # Primero recopilamos todos los nombres desde la hoja 'Registro'
+    # Primero recopilamos todos los nombres desde la hoja 'Lista'
     try:
-        df_names = pd.read_excel(file_path, sheet_name='Registro', skiprows=1)
+        df_names = pd.read_excel(file_path, sheet_name='Lista', skiprows=1)
     except FileNotFoundError:
         print(f"Error: The file {file_path} was not found.")
         return None
@@ -69,8 +69,9 @@ def read_excel_players_stats(file_path):
         return None
 
     df_names.drop(columns=['Orden'], inplace=True)
-    df_names = df_names.iloc[:-3, :].copy()
     df_names.columns = ['name', 'team']
+    # Eliminate every row name starting by 'Autogol'
+    df_names = df_names[~df_names['name'].str.startswith('Autogol')].copy()
 
     try:
         df_player_stats = pd.read_excel(file_path, skiprows=3, sheet_name='Partido', usecols="L:O")
@@ -92,8 +93,10 @@ def read_excel_players_stats(file_path):
         index_name = input("Selecciona un número de los anteriores")
         name = df_names.loc[int(index_name), 'name']
         df_stats.loc[df_stats['name'] == name, 'own_goals'] = df_stats.loc[index, 'goals']
-    df_stats.drop(autogol_indices, inplace=True)
+    else:
+        df_stats['own_goals'] = 0
 
+    df_stats.drop(autogol_indices, inplace=True)
     df_stats.fillna(0, inplace=True)
 
     # to int

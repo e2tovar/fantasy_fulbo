@@ -121,20 +121,50 @@ class PlayerStatisticsManager(DatabaseManager):
         """
         self.execute_queries(query, results)
 
-    def get_general_statistics(self):
+    def get_general_statistics(self, year, season):
         query = f"""
             SELECT
-                player.name AS player_name,
-                SUM(ps.{self.GOALS}) AS goles,
-                SUM(ps.{self.ASSISTS}) AS asistencias,
-                ROUND(AVG(ps.{self.MEDIA}),2) AS media,
-                SUM(ps.{self.MVP}) AS mvp,
-                SUM(ps.{self.YELLOW_CARD}) AS amarillas,
-                SUM(ps.{self.RED_CARD}) AS rojas
-            FROM player_statistics ps
-            JOIN players ON ps.{self.PLAYER_ID} = player.id
-            GROUP BY player.id
-            ORDER BY goles DESC
+            pl.name_app AS player_name,
+            SUM(ps.goals) AS goles,
+            SUM(ps.assists) AS asistencias,
+            ROUND(AVG(ps.media),2) AS media,
+            SUM(ps.mvp) AS mvp,
+            SUM(ts.goals) as team_goals,
+            SUM(ts.goals_against) as team_goals_against,
+            MAX(ts.position) as position
+        FROM player_statistics ps
+        left JOIN players pl
+            ON ps.player_id = pl.id
+        left join team_stats ts
+            ON ps.team = ts.team and ps.season = ts.season and ps.match_week = ts.match_week and ps.year = ts.year
+        where ps.year = {year}
+        and ps.season= {season}
+        GROUP BY pl.id
+        ORDER BY goles DESC
+        """
+        return pd.read_sql_query(query, self.engine, index_col='player_name')
+
+    def get_week_statistics(self, year, season, match_week):
+        query = f"""
+            SELECT
+            pl.name_app AS player_name,
+            SUM(ps.goals) AS goles,
+            SUM(ps.assists) AS asistencias,
+            ROUND(AVG(ps.media),2) AS media,
+            SUM(ps.mvp) AS mvp,
+            SUM(ts.goals) as team_goals,
+            SUM(ts.goals_against) as team_goals_against,
+            MAX(ts.position) as position
+        FROM player_statistics ps
+        left JOIN players pl
+            ON ps.player_id = pl.id
+        left join team_stats ts
+            ON ps.team = ts.team and ps.season = ts.season and ps.match_week = ts.match_week and ps.year = ts.year
+        where ps.year = {year}
+        and ps.match_week = {match_week}
+        and ps.season = {season}
+        GROUP BY pl.id
+        ORDER BY goles DESC
         """
         return pd.read_sql_query(query, self.engine, index_col='player_name')
 

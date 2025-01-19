@@ -54,16 +54,16 @@ time.sleep(2)
 driver.get("https://liga-profesional-de-aficionados-al-futbol.sporteasy.net/calendar/list/")
 # clikeamos los settings
 # Esperar a que carge la página
-wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.season_LIST_BTN_CLASS)))
+wait.until(EC.presence_of_element_located((By.CLASS_NAME, settings.SEASSON_LIST_BTN_CLASS)))
 # click en el boton de settings
-driver.find_element(By.CLASS_NAME, settings.season_LIST_BTN_CLASS).click()
+driver.find_element(By.CLASS_NAME, settings.SEASSON_LIST_BTN_CLASS).click()
 
 season_options = driver.find_elements(By.CLASS_NAME, "select__option")
 
 
 for i in range(len(season_options)):
     if i > 0:
-        driver.find_element(By.CLASS_NAME, settings.season_LIST_BTN_CLASS).click()
+        driver.find_element(By.CLASS_NAME, settings.SEASSON_LIST_BTN_CLASS).click()
 
     season_options = driver.find_elements(By.CLASS_NAME, "select__option")
     # force last season
