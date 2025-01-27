@@ -23,7 +23,7 @@ def read_excel_teams_results(file_path):
     df_resultado['local_goals'] = pd.to_numeric(df_resultado['local_goals'], errors='coerce').fillna(0).astype(int)
     df_resultado['away_goals'] = pd.to_numeric(df_resultado['away_goals'], errors='coerce').fillna(0).astype(int)
 
-    # Obtenemos team stats de la tabla de resultados. Tabla 2
+    # Obtenemos team stats matemáticamente por los resultados
     # -----------------------------------------------------------------------------------------------------------------
     df_stats = df_resultado.copy()
     teams = df_stats['local'].unique()
@@ -49,8 +49,8 @@ def read_excel_teams_results(file_path):
     df_stats = pd.concat([local_stats, away_stats])
     df_stats = df_stats.groupby('team').sum().reset_index()
 
-    # get posicion
-    df_stats['position'] = df_stats['points'].rank(method='min', ascending=False).astype(int)
+    # Resolve Positions
+    df_stats = _resolve_ties(df_stats)
 
     return df_resultado, df_stats
 
@@ -103,5 +103,31 @@ def read_excel_players_stats(file_path):
     df_stats['goals'] = df_stats['goals'].astype(int)
     df_stats['assists'] = df_stats['assists'].astype(int)
     df_stats['own_goals'] = df_stats['own_goals'].astype(int)
+
+    return df_stats
+
+
+def _resolve_ties(df_stats):
+    # Calculate goal difference
+    df_stats['goal_difference'] = df_stats['goals'] - df_stats['goals_against']
+
+    # Sort by points, goal difference, and goals for
+    df_stats.sort_values(by=['points', 'goal_difference', 'goals'], ascending=[False, False, False], inplace=True)
+
+    # Handle ties
+    for i in range(len(df_stats) - 1):
+        if df_stats.iloc[i]['points'] == df_stats.iloc[i + 1]['points']:
+            if df_stats.iloc[i]['goal_difference'] == df_stats.iloc[i + 1]['goal_difference']:
+                if df_stats.iloc[i]['goals'] == df_stats.iloc[i + 1]['goals']:
+                    print(f"Tie between teams {df_stats.iloc[i]['team']} and {df_stats.iloc[i + 1]['team']}.")
+                    decision = input("Enter 1 if the first team should be ranked higher, otherwise enter 2: ")
+                    if decision == '1':
+                        df_stats.iloc[i], df_stats.iloc[i + 1] = df_stats.iloc[i + 1], df_stats.iloc[i]
+
+    # Assign positions
+    df_stats['position'] = range(1, len(df_stats) + 1)
+
+    # Delete temporary columns
+    df_stats.drop(['goal_difference'], axis=1, inplace=True)
 
     return df_stats
