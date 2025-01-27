@@ -1,6 +1,9 @@
 import os
+import streamlit_authenticator as stauth
 import streamlit as st
 import pandas as pd
+import yaml
+from yaml.loader import SafeLoader
 from dotenv import load_dotenv
 
 from database.player_statistics import PlayerStatisticsManager
@@ -9,6 +12,27 @@ from config.settings import WEEK_PATH
 
 
 load_dotenv()
+
+# --- USER AUTHENTICATION ---
+#load yml
+with open('config/config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+# Pre-hashing all plain text passwords once
+# stauth.Hasher.hash_passwords(config['credentials'])
+
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
+
+try:
+    authenticator.login()
+except Exception as e:
+    st.error(e)
+
 
 st.title("Fantasy del fulbol")
 
@@ -72,28 +96,50 @@ elif menu == "Ranking":
 
 elif menu == "Carga de Semana (Admin)":
     st.header("Carga de datos semanales")
-    wdm = WeekDataManager(file_path=WEEK_PATH, year=2025, season=1, match_week=1)
+
     psm = PlayerStatisticsManager()
 
     if "admin_logged" not in st.session_state:
         st.session_state["admin_logged"] = False
+    if "week_uploaded" not in st.session_state:
+        st.session_state["week_uploaded"] = False
+
+    uploaded_file = None
 
     if not st.session_state["admin_logged"]:
         clave_admin = st.text_input("Ingrese clave de administrador", type="password", value="")
         if clave_admin:
             if clave_admin == os.getenv("ADMIN_PASS"):
-                st.session_state["admin_logged"] = True
                 st.write("Obteniendo los datos desde el excel y la APP ...")
-                try:
-                    # Simulación de carga de datos
-                    wdm.upload_week()
-                    st.success("Datos de la semana cargados correctamente.")
-                    df_actualizado = psm.get_general_statistics()
-                    st.dataframe(df_actualizado)
-                except Exception as e:
-                    st.error(f"Ocurrió un error al procesar la carga: {e}")
+                with st.form(key="my_form"):
+                    # Option to upload an Excel file
+                    uploaded_file = st.file_uploader("Subir archivo Excel", type=["xlsx"])
+
+                    # Selecciona Año, Bimestre y Jornada en la web
+                    year = st.text_input("Año: ")
+                    season = st.text_input("Bimestre: ")
+                    match_week = st.text_input("Jornada: ")
+                    submit_button = st.form_submit_button("Subir semana")
+
+                    if submit_button:
+                        if not all([year, season, match_week]):
+                            st.warning("Por favor, ingrese Año, Bimestre y Jornada.")
+                            st.session_state["week_uploaded"] = False
+
+                        else:
+                            wdm = WeekDataManager(year=year, season=season, match_week=match_week, file=uploaded_file)
+                            wdm.upload_week()
+                            print("Descargado")
+                            st.session_state["week_uploaded"] = True
             else:
                 st.error("Clave de administrador incorrecta.")
                 st.session_state["admin_logged"] = False
     else:
-        st.write("Bienvenido, administrador.")
+        st.session_state["admin_logged"] = True
+        st.write("Se subió la semana correctamente. Recarga la página para subir otra")
+
+    if st.session_state["week_uploaded"]:
+        st.balloons()
+        st.success("Se subió la semana correctamente")
+        df_actualizado = psm.get_week_statistics(year, season, match_week)
+        st.dataframe(df_actualizado)

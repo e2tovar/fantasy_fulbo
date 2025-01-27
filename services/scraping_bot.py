@@ -152,8 +152,10 @@ class ScrapingBot:
         if not weeks:
             raise Exception("No weeks found in the calendar")
 
+        week = int(week)
+
         if week != 0:
-            if week >= len(weeks):
+            if int(week) >= len(weeks):
                 raise IndexError("Specified week is out of range.")
             week_e = weeks[week]
             week_ind = week

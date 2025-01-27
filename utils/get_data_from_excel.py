@@ -7,7 +7,7 @@ def read_excel_teams_results(file_path):
     try:
         df_resultado = pd.read_excel(file_path, sheet_name='Partido', skiprows=3, usecols='B:G')
     except FileNotFoundError:
-        print(f"Error: The file {file_path} was not found.")
+        print(f"Error al leer el archivo de la jornada {file_path}. Asegurate de que lo has subido correctamente")
         return None
     except Exception as e:
         print(f"An error occurred: {e}")

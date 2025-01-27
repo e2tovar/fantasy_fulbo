@@ -146,7 +146,7 @@ class PlayerStatisticsManager(DatabaseManager):
 
     def get_week_statistics(self, year, season, match_week):
         query = f"""
-            SELECT
+        SELECT
             pl.name_app AS player_name,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
@@ -154,16 +154,16 @@ class PlayerStatisticsManager(DatabaseManager):
             SUM(ps.mvp) AS mvp,
             SUM(ts.goals) as team_goals,
             SUM(ts.goals_against) as team_goals_against,
-            MAX(ts.position) as position
+            ROUND(AVG(ts.goals_against),2) AS avg_team_goals_against
         FROM player_statistics ps
         left JOIN players pl
             ON ps.player_id = pl.id
         left join team_stats ts
-            ON ps.team = ts.team and ps.season = ts.season and ps.match_week = ts.match_week and ps.year = ts.year
+            ON ps.team = ts.team and ps.season = ts.season and ps.year = ts.year and ps.match_week = ts.match_week
         where ps.year = {year}
-        and ps.match_week = {match_week}
         and ps.season = {season}
-        GROUP BY pl.id
+        and ps.match_week = {match_week}
+        GROUP BY ps.player_id, ps.year, ps.season
         ORDER BY goles DESC
         """
         return pd.read_sql_query(query, self.engine, index_col='player_name')

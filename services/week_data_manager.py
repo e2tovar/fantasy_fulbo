@@ -11,7 +11,7 @@ from database.players import PlayerManager
 
 
 class WeekDataManager:
-    def __init__(self, year: int, season: str, match_week: int, week_note: str = ''):
+    def __init__(self, year: int, season: str, match_week: int, week_note: str = '', file=None):
         self.year = year
         self.season = season
         self.match_week = match_week
@@ -19,9 +19,11 @@ class WeekDataManager:
         self.trm = TeamResultsManager()
         self.tsm = TeamStatsManager()
         self.psm = PlayerStatisticsManager()
-        self.file_path = self._build_path()
+        self.file_path = self._build_path(file)
 
-    def _build_path(self):
+    def _build_path(self, file):
+        if file:
+            return file
         return f"data/jornadas/{self.year}/result_season_{self.season}_week_{self.match_week}.xlsx"
 
     def __save_week_team_stats_from_df(self, df: pd.DataFrame, tsm: TeamStatsManager) -> None:
