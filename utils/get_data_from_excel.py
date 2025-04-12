@@ -131,3 +131,5 @@ def _resolve_ties(df_stats):
     df_stats.drop(['goal_difference'], axis=1, inplace=True)
 
     return df_stats
+
+

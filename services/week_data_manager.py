@@ -20,6 +20,7 @@ class WeekDataManager:
         self.tsm = TeamStatsManager()
         self.psm = PlayerStatisticsManager()
         self.file_path = self._build_path(file)
+        self.file_name = file.name.split('.')[0]
 
     def _build_path(self, file):
         if file:
@@ -77,11 +78,6 @@ class WeekDataManager:
             psm.GOALS,
             psm.OWN_GOALS,
             psm.ASSISTS,
-            psm.MVP,
-            psm.YELLOW_CARD,
-            psm.RED_CARD,
-            psm.VOTES,
-            psm.TOTAL_VOTES,
             psm.NOTE
             }
         if not required_columns.issubset(df.columns):
@@ -99,8 +95,34 @@ class WeekDataManager:
         """
         Carga los datos de la jornada. Esta es una función crucial
         """
+        # excel name ej: 8-febrero
+        meses_a_numero = {
+            'enero': 1,
+            'febrero': 2,  # Nota: "febrero" con una r (error común)
+            'febrero': 2,
+            'marzo': 3,
+            'abril': 4,
+            'mayo': 5,
+            'junio': 6,
+            'julio': 7,
+            'agosto': 8,
+            'septiembre': 9,
+            'octubre': 10,
+            'noviembre': 11,
+            'diciembre': 12
+        }
+        match_day = self.file_name.split('-')[0]
+        match_month = meses_a_numero[self.file_name.split('-')[1]]
+        match_year = self.year
+
         df_resultado, df_stats = self.__read_team_data()
         df_players = self.__read_player_data()
+
+        # add dates
+        df_players['year'] = self.year
+        df_players['season'] = self.season
+        df_players['match_week'] = self.match_week
+        df_players['date'] = f"{match_year}-{match_month}-{match_day}"
 
         self.__save_week_team_result_from_df(df_resultado, self.trm)
         self.__save_week_team_stats_from_df(df_stats, self.tsm)
@@ -128,30 +150,13 @@ class WeekDataManager:
             logger.exception(f"Failed to read player data from Excel: {e}")
             df_excel = pd.DataFrame()
 
-        # from app
-        try:
-            df_app = scrap_app_week_data(
-                stats_year=self.year, stats_season=self.season, stats_week=self.match_week, note=self.week_note)
-        except Exception as e:
-            logger.exception(f"Failed to scrape player data from app: {e}")
-            df_app = pd.DataFrame()
-
         # mapping to id
         pm = PlayerManager()
         excel_map = pm.excel_name_id_map
-        app_map = pm.app_name_id_map
         df_excel['player_id'] = df_excel['name'].map(excel_map)
-        df_app['player_id'] = df_app['name'].map(app_map)
-        df_app.drop(columns=['name'], inplace=True)
+        df_excel['note'] = self.week_note
 
-        # merge
-        df_players = pd.merge(df_excel, df_app, on=['player_id'], how='outer', validate='one_to_one')
-        if df_players['player_id'].isnull().any():
-            raise ValueError("Merged data contains missing player IDs.")
-
-        df_players['note'] = self.week_note
-
-        return df_players
+        return df_excel
 
     def delete_week(self) -> None:
         """

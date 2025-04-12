@@ -61,6 +61,8 @@ class PlayerStatisticsManager(DatabaseManager):
         (player_id, year, season, match_week, date, team, goals, assists, mvp, yellow_card, red_card,
         votes, total_votes, note)
         """
+        # Agregamos MVP a 0
+        df['mvp'] = 0
 
         results = [
             (
@@ -73,20 +75,16 @@ class PlayerStatisticsManager(DatabaseManager):
                 row.goals,
                 row.own_goals,
                 row.assists,
-                row.mvp,
-                row.yellow_card,
-                row.red_card,
-                row.votes,
-                row.total_votes,
-                row.note
+                row.note,
+                row.mvp
             )
             for row in df.itertuples(index=False)
         ]
 
         # Validate results structure and data types
         for result in results:
-            if not isinstance(result, tuple) or len(result) != 16:
-                raise ValueError("Each result must be a tuple with 16 elements.")
+            if not isinstance(result, tuple) or len(result) != 11:
+                raise ValueError("Each result must be a tuple with 11 elements.")
             if not all(isinstance(field, (int, str)) for field in result):
                 raise TypeError("Each field in the result tuple must be of type int or str.")
 
@@ -107,13 +105,9 @@ class PlayerStatisticsManager(DatabaseManager):
              {self.GOALS},
              {self.OWN_GOALS},
              {self.ASSISTS},
-             {self.MVP},
-             {self.YELLOW_CARD},
-             {self.RED_CARD},
-             {self.VOTES},
-             {self.TOTAL_VOTES},
-             {self.NOTE})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             {self.NOTE},
+             {self.MVP})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.execute_queries(query, results)
 

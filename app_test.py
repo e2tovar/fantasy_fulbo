@@ -93,12 +93,12 @@ elif menu == "Carga de Semana (Admin)":
         clave_admin = st.text_input("Ingrese clave de administrador", type="password", value="")
         if clave_admin:
             if clave_admin == os.getenv("ADMIN_PASS"):
-                st.write("Obteniendo los datos desde el excel y la APP ...")
+                st.write("Obteniendo los datos desde el excel ...")
                 with st.form(key="my_form"):
                     # Option to upload an Excel file
                     uploaded_file = st.file_uploader("Subir archivo Excel", type=["xlsx"])
 
-                    # Selecciona Año, Bimestre y Jornada en la web
+                    # Selecciona Año, Bimestre y Jornada
                     year = st.text_input("Año: ")
                     season = st.text_input("Bimestre: ")
                     match_week = st.text_input("Jornada: ")
