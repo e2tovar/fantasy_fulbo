@@ -15,7 +15,6 @@ class PlayerStatisticsManager(DatabaseManager):
     OWN_GOALS = "own_goals"
     ASSISTS = "assists"
     MVP = "mvp"
-    MEDIA = "media"
     YELLOW_CARD = "yellow_card"
     RED_CARD = "red_card"
     VOTES = "votes"
@@ -36,7 +35,6 @@ class PlayerStatisticsManager(DatabaseManager):
                 {self.OWN_GOALS} INTEGER NOT NULL,
                 {self.ASSISTS} INTEGER NOT NULL,
                 {self.MVP} INTEGER NOT NULL,
-                {self.MEDIA} FLOAT NOT NULL,
                 {self.YELLOW_CARD} INTEGER NOT NULL,
                 {self.RED_CARD} INTEGER NOT NULL,
                 {self.VOTES} INTEGER NOT NULL,
@@ -46,21 +44,21 @@ class PlayerStatisticsManager(DatabaseManager):
             )
         """)
 
-    def add_player_statistics(self, player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card, votes, total_votes, note):
+    def add_player_statistics(self, player_id, year, season, match_week, date, team, goals, assists, mvp, yellow_card, red_card, votes, total_votes, note):
         # Delete first if exists
         query = f"DELETE FROM player_statistics WHERE {self.PLAYER_ID} = ? AND {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ?"
         self.execute_query(query, (player_id, year, season, match_week))
         query = f"""
             INSERT INTO player_statistics ({self.PLAYER_ID}, {self.YEAR}, {self.SEASON}, {self.MATCH_WEEK}, {self.DATE}, {self.TEAM}, {self.GOALS}, {self.ASSISTS}, {self.MVP},
-            {self.MEDIA}, {self.YELLOW_CARD}, {self.RED_CARD}, {self.VOTES}, {self.TOTAL_VOTES}, {self.NOTE})
+            {self.YELLOW_CARD}, {self.RED_CARD}, {self.VOTES}, {self.TOTAL_VOTES}, {self.NOTE})
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-        self.execute_query(query, (player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card, votes, total_votes, note))
+        self.execute_query(query, (player_id, year, season, match_week, date, team, goals, assists, mvp, yellow_card, red_card, votes, total_votes, note))
 
     def add_player_statistics_week_from_df(self, df):
         """
         Add multiple player stats from the excel.
         :param results: List of tuples, each containing
-        (player_id, year, season, match_week, date, team, goals, assists, mvp, media, yellow_card, red_card,
+        (player_id, year, season, match_week, date, team, goals, assists, mvp, yellow_card, red_card,
         votes, total_votes, note)
         """
 
@@ -76,7 +74,6 @@ class PlayerStatisticsManager(DatabaseManager):
                 row.own_goals,
                 row.assists,
                 row.mvp,
-                row.media,
                 row.yellow_card,
                 row.red_card,
                 row.votes,
@@ -111,7 +108,6 @@ class PlayerStatisticsManager(DatabaseManager):
              {self.OWN_GOALS},
              {self.ASSISTS},
              {self.MVP},
-             {self.MEDIA},
              {self.YELLOW_CARD},
              {self.RED_CARD},
              {self.VOTES},
@@ -121,17 +117,16 @@ class PlayerStatisticsManager(DatabaseManager):
         """
         self.execute_queries(query, results)
 
-    def get_general_statistics(self, year, season):
+    def fetch_general_statistics(self, year, season):
         query = f"""
             SELECT
-            pl.name_app AS player_name,
+            pl.name_app AS nombre,
+            pl.field_position_short as posicion_campo,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
-            ROUND(AVG(ps.media),2) AS media,
             SUM(ps.mvp) AS mvp,
-            SUM(ts.goals) as team_goals,
-            SUM(ts.goals_against) as team_goals_against,
-            MAX(ts.position) as position
+            SUM(ts.goals) as goles_anotados_equipo,
+            SUM(ts.goals_against) as goles_recibidos_equipo
         FROM player_statistics ps
         left JOIN players pl
             ON ps.player_id = pl.id
@@ -142,7 +137,7 @@ class PlayerStatisticsManager(DatabaseManager):
         GROUP BY pl.id
         ORDER BY goles DESC
         """
-        return pd.read_sql_query(query, self.engine, index_col='player_name')
+        return pd.read_sql_query(query, self.engine, index_col='nombre')
 
     def get_week_statistics(self, year, season, match_week):
         query = f"""
@@ -150,7 +145,6 @@ class PlayerStatisticsManager(DatabaseManager):
             pl.name_app AS player_name,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
-            ROUND(AVG(ps.media),2) AS media,
             SUM(ps.mvp) AS mvp,
             SUM(ts.goals) as team_goals,
             SUM(ts.goals_against) as team_goals_against,
@@ -176,6 +170,17 @@ class PlayerStatisticsManager(DatabaseManager):
             WHERE ps.{self.MATCH_WEEK} = ?"""
 
         return self.fetch_query(query, (week,))
+
+    def fetch_last_year_season(self):
+        query = """
+        SELECT year, MAX(season)
+        FROM player_statistics
+        GROUP BY year
+        ORDER BY year DESC
+        LIMIT 1;
+        """
+
+        return self.fetch_query(query)
 
     def delete_week_stats(self, year, season, match_week):
         query = f"DELETE FROM player_statistics WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ?"

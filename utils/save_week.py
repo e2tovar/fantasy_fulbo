@@ -68,7 +68,6 @@ def save_week_players_stats_from_df(df: pd.DataFrame):
                 date=row.week_date,
                 goals=row.goals,
                 assists=row.assists,
-                media=row.media,
                 mvp=row.mvp,
                 yellow_card=row.yellow_card,
                 red_card=row.red_card,
@@ -78,4 +77,3 @@ def save_week_players_stats_from_df(df: pd.DataFrame):
             )
         except Exception as e:
             print(f"Error saving statistics for player {row.name} in match week {row.match_week}: {e}")
-

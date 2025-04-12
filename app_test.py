@@ -17,13 +17,12 @@ load_dotenv()
 with open('config/config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
-st.title("Fantasy del fulbol")
+st.title("Estadísticas PreBar League")
 
 # Opciones de navegación
 menu_opciones = [
     "Inicio",
     "Estadísticas",
-    "Ranking",
     "Carga de Semana (Admin)"
 ]
 menu = st.sidebar.selectbox("Menú", menu_opciones)
@@ -31,9 +30,10 @@ menu = st.sidebar.selectbox("Menú", menu_opciones)
 if menu == "Inicio":
     st.subheader("¡Bienvenido!")
     st.write("""
-    Esta aplicación te permite participar en un Fantasy personal.
-    Selecciona un equipo, compite por ser el mejor y revisa las estadísticas.
-    Usa el menú de la izquierda para navegar.
+    Esta aplicación (BETA) está creada para ver las estadísticas de nuestra PreBar League.
+
+    Iremos añadiendo funcionalidades a medida de lo posible (siempre que Eddy no esté en un techo).
+    Podrás navegar por las opciones disponibles en la barra lateral izquierda.
     """)
 
 elif menu == "Seleccionar Equipo":
@@ -69,12 +69,13 @@ elif menu == "Seleccionar Equipo":
 elif menu == "Estadísticas":
     st.header("Estadísticas Generales")
     gestor = PlayerStatisticsManager()
-    df_gen = gestor.get_general_statistics()
+    last_year_season = gestor.fetch_last_year_season()
+    print(last_year_season)
+    last_year = last_year_season[0][0]
+    last_season = last_year_season[0][1]
+    df_gen = gestor.fetch_general_statistics(year=last_year, season=last_season)
     st.dataframe(df_gen)
 
-elif menu == "Ranking":
-    st.header("Ranking de Participantes")
-    # Aquí se mostraría el ranking
 
 elif menu == "Carga de Semana (Admin)":
     st.header("Carga de datos semanales")

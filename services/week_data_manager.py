@@ -78,7 +78,6 @@ class WeekDataManager:
             psm.OWN_GOALS,
             psm.ASSISTS,
             psm.MVP,
-            psm.MEDIA,
             psm.YELLOW_CARD,
             psm.RED_CARD,
             psm.VOTES,

@@ -7,7 +7,8 @@ class PlayerManager(DatabaseManager):
     ID = "id"
     NAME_EXCEL = "name_excel"
     NAME_APP = "name_app"
-    POSITION = "position"
+    POSITION = "field_position"
+    POSITION_SHORT = "field_position_short"
     PRICE = "price"
 
     def __init__(self):
@@ -41,6 +42,7 @@ class PlayerManager(DatabaseManager):
                 {self.NAME_EXCEL} TEXT NOT NULL,
                 {self.NAME_APP} TEXT NOT NULL,
                 {self.POSITION} TEXT NOT NULL,
+                {self.POSITION_SHORT} TEXT NOT NULL,
                 {self.PRICE} REAL NOT NULL
             )
         """)
@@ -51,8 +53,12 @@ class PlayerManager(DatabaseManager):
             raise ValueError("Price cannot be negative")
         if position not in allowed_positions:
             raise ValueError(f"Invalid position: {position}")
-        query = f"INSERT INTO players({self.NAME_EXCEL}, {self.NAME_APP}, {self.POSITION}, {self.PRICE}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
-        id = self.execute_query(query, (name, name_fantasy, position, price))
+
+        map_position_short = {"Delantero": "DEL", "Mediocampo": "MED", "Defensor": "DEF"}
+        position_short = map_position_short[position]
+
+        query = f"INSERT INTO players({self.NAME_EXCEL}, {self.NAME_APP}, {self.POSITION}, {self.POSITION_SHORT}, {self.PRICE}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
+        id = self.execute_query(query, (name, name_fantasy, position, position_short, price))
         # Invalidate caches and refresh
         self.excel_name_id_map = self._fetch_excel_name_id_map()
         self.app_name_id_map = self._fetch_app_name_id_map()
@@ -81,4 +87,3 @@ class PlayerManager(DatabaseManager):
     def get_all_players(self) -> pd.DataFrame:
         query = "SELECT * FROM players"
         return pd.read_sql_query(sql=query, con=self.engine, index_col=self.ID)
-

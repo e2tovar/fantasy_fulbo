@@ -106,7 +106,7 @@ class ScrapingBot:
         star_votes = self.driver.find_element(By.CLASS_NAME, settings.STAR_VOTE_CLASS).text
         votes, total_votes = map(str.strip, star_votes.replace('Votos', '').split('/'))
 
-        df = pd.DataFrame(data, columns=['media', 'my_note', 'p', 'goles', 'asistencias', 'rojas', 'amarillas', 'pts', 't'])
+        df = pd.DataFrame(data, columns=['my_note', 'p', 'goles', 'asistencias', 'rojas', 'amarillas', 'pts', 't'])
         df['nombre'] = names
         df['mvp'] = 0
         df['votes'] = 0
@@ -120,7 +120,6 @@ class ScrapingBot:
             'nombre': 'name',
             'goles': 'goals',
             'asistencias': 'assists',
-            'media': 'media',
             'mvp': 'mvp',
             'amarillas': 'yellow_card',
             'rojas': 'red_card',

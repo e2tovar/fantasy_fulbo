@@ -48,7 +48,7 @@ elif menu == "Seleccionar Equipo":
 elif menu == "Estadísticas":
     st.header("Estadísticas Generales")
     weekm = PlayerStatisticsManager()
-    gen_df = weekm.get_general_statistics()
+    gen_df = weekm.fetch_general_statistics()
     st.dataframe(gen_df)
     # Crear un control para seleccionar la página
 

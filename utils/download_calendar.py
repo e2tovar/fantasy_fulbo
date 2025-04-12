@@ -87,7 +87,7 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
     total_votes = star_votes.replace('Votos', '').split('/')[1].strip()
 
     # Convertir los datos a un DataFrame para un manejo más cómodo
-    df = pd.DataFrame(data, columns=['media', 'my_note', 'p', 'goles', 'asistencias', 'rojas', 'amarillas', 'pts', 't'])
+    df = pd.DataFrame(data, columns=['my_note', 'p', 'goles', 'asistencias', 'rojas', 'amarillas', 'pts', 't'])
     df['nombre'] = names
     df['mvp'] = 0
     df['votes'] = 0
@@ -126,10 +126,10 @@ def scrape_week_data(driver, wait, year, season, week, week_date):
         """
 
     df = df[[
-        'nombre', 'goles', 'asistencias', 'media', 'mvp', 'amarillas',
+        'nombre', 'goles', 'asistencias', 'mvp', 'amarillas',
         'rojas', 'votes', 'total_votes', 'team', 'position', 'note']].copy()
     df.columns = [
-        'name', 'goals', 'assists', 'media', 'mvp', 'yellow_card', 'red_card',
+        'name', 'goals', 'assists', 'mvp', 'yellow_card', 'red_card',
         'votes', 'total_votes', 'team', 'position', 'note']
 
     df['year'] = year
