@@ -96,7 +96,7 @@ class WeekDataManager:
         except Exception as e:
             logging.error(f"Error saving player statistics batch: {e}")
 
-    def upload_week(self) -> None:
+    def update_week(self) -> None:
         """
         Carga los datos de la jornada. Esta es una función crucial
         """

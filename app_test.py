@@ -1,5 +1,4 @@
 import os
-import streamlit_authenticator as stauth
 import streamlit as st
 import pandas as pd
 import yaml
@@ -14,32 +13,15 @@ from config.settings import WEEK_PATH
 load_dotenv()
 
 # --- USER AUTHENTICATION ---
-#load yml
+# load yml
 with open('config/config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
-
-# Pre-hashing all plain text passwords once
-# stauth.Hasher.hash_passwords(config['credentials'])
-
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-)
-
-try:
-    authenticator.login()
-except Exception as e:
-    st.error(e)
-
 
 st.title("Fantasy del fulbol")
 
 # Opciones de navegación
 menu_opciones = [
     "Inicio",
-    "Seleccionar Equipo",
     "Estadísticas",
     "Ranking",
     "Carga de Semana (Admin)"
@@ -128,7 +110,7 @@ elif menu == "Carga de Semana (Admin)":
 
                         else:
                             wdm = WeekDataManager(year=year, season=season, match_week=match_week, file=uploaded_file)
-                            wdm.upload_week()
+                            wdm.update_week()
                             print("Descargado")
                             st.session_state["week_uploaded"] = True
             else:
