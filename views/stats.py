@@ -29,6 +29,8 @@ def get_aggregations():
 
     return aggregations
 
+if not 'table' in st.session_state:
+    st.session_state.table = False
 
 # Obtenemos la información precargada (cacheada)
 aggregations = get_aggregations()
@@ -66,8 +68,9 @@ else:
     semana = None
 
 # Botón para cargar la consulta y mostrar la tabla de estadísticas
-if st.button("Mostrar estadísticas"):
+if st.button("Mostrar estadísticas") or st.session_state.table:
     try:
+        st.session_state.table = True
         # Se asume que get_statistics acepta los parámetros de forma opcional según el nivel de agregación
         df = psm.fetch_general_statistics(year=año, season=bimestre, match_week=semana)
         if df.empty:
@@ -78,7 +81,7 @@ if st.button("Mostrar estadísticas"):
             gb = GridOptionsBuilder.from_dataframe(df)
             gb.configure_pagination(paginationAutoPageSize=True)  # Habilita la paginación automática
             gb.configure_side_bar()  # Muestra el panel lateral con opciones de filtros y columnas
-            gb.configure_default_column(filter=True, sortable=True, editable=False)  # Configura filtro y ordenamiento
+            gb.configure_default_column(filter=True, sortable=True, editable=False, resizable=True)  # Configura filtro y ordenamiento
             gb.configure_column("nombre", pinned='left')
 
             gridOptions = gb.build()
