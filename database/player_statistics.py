@@ -116,7 +116,7 @@ class PlayerStatisticsManager(DatabaseManager):
         query = f"""
             SELECT
             pl.player_name AS nombre,
-            count(1) as juegos,
+            count(1) as jornadas,
             pl.field_position_short as posicion_campo,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
