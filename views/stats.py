@@ -1,5 +1,6 @@
 import streamlit as st
 from database.player_statistics import PlayerStatisticsManager
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Cacheamos la instancia del PlayerStatisticsManager para evitar recrearla en cada rerun
 @st.cache_resource
@@ -72,6 +73,15 @@ if st.button("Mostrar estadísticas"):
         if df.empty:
             st.info("No se encontraron datos con los filtros seleccionados.")
         else:
-            st.dataframe(df)
+            # Configurar las opciones de la grilla
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=True)  # Habilita la paginación automática
+            gb.configure_side_bar()  # Muestra el panel lateral con opciones de filtros y columnas
+            gb.configure_default_column(filter=True, sortable=True, editable=False)  # Configura filtro y ordenamiento
+            gridOptions = gb.build()
+
+            # Mostrar la tabla interactiva con AgGrid
+            AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=False, update_mode="MODEL_CHANGED")
+
     except Exception as e:
         st.error(f"Ocurrió un error al obtener las estadísticas: {e}")
