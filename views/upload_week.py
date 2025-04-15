@@ -98,7 +98,7 @@ def process_week():
     """
     Procesa la carga de la semana, solicitando información adicional y actualizando datos.
     """
-    st.success("Excel cargado correctamente.")
+    st.success(f"Excel cargado correctamente: {st.session_state["file_path"].name}")
     st.subheader("Cargar datos de la semana")
     with st.form(key="upload_week"):
         col1, col2, col3 = st.columns(3)

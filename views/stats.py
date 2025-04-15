@@ -11,7 +11,6 @@ psm = get_psm()
 
 @st.cache_resource
 def get_aggregations():
-    print('AAAAAAAAAAAAAAAAAAAAAAAAAAGGGGGGGREEEGAAAAAAAAAAAAAAA')
     # Obtener la lista de años
     años = psm.get_years()
 
@@ -33,21 +32,26 @@ def get_aggregations():
 # Obtenemos la información precargada (cacheada)
 aggregations = get_aggregations()
 
-print(aggregations)
-
 st.header("Estadísticas Generales")
-st.markdown("Ajusta los filtros para visualizar las estadísticas basadas en los datos asociados.")
+st.markdown(
+    """
+        Ajusta los filtros para visualizar las estadísticas basadas en los datos asociados.
+        Agregaremos ChatGPT en el futuro para que haga queries
+        Notas:
+        - En el año 2023 no contábamos los bimestres
+    """
+    )
 
 # Selector para el nivel de agregación usando un radio button
-nivel_agregacion = st.radio("Seleccione el nivel de agregación:", options=["Año", "Bimestre", "Semana"])
+nivel_agregacion = st.radio("Seleccione el nivel de agregación:", options=["Año", "Bimestre", "Semana"], index=1)
 
 # El selector de año se basa en las claves del diccionario precargado
-años = sorted(list(aggregations.keys()))
+años = sorted(list(aggregations.keys()), reverse=True)
 año = st.selectbox("Seleccione el Año:", options=años)
 
 # Selector de bimestre: se muestra si el nivel de agregación es "Bimestre" o "Semana"
 if nivel_agregacion in ["Bimestre", "Semana"]:
-    bimestres = aggregations[año]["bimestres"]
+    bimestres = sorted(aggregations[año]["bimestres"], reverse=True)
     bimestre = st.selectbox("Seleccione el Bimestre:", options=bimestres)
 else:
     bimestre = None
@@ -55,7 +59,7 @@ else:
 # Selector de semana: solo se muestra si el nivel de agregación es "Semana"
 if nivel_agregacion == "Semana":
     # Obtenemos las semanas disponibles para el año y bimestre seleccionados.
-    weeks_options = aggregations[año]["weeks"].get(bimestre, [])
+    weeks_options = sorted(aggregations[año]["weeks"].get(bimestre, []), reverse=True)
     semana = st.selectbox("Seleccione la Semana:", options=weeks_options)
 else:
     semana = None
