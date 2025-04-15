@@ -74,10 +74,13 @@ if st.button("Mostrar estadísticas"):
             st.info("No se encontraron datos con los filtros seleccionados.")
         else:
             # Configurar las opciones de la grilla
+            df.reset_index(inplace=True)
             gb = GridOptionsBuilder.from_dataframe(df)
             gb.configure_pagination(paginationAutoPageSize=True)  # Habilita la paginación automática
             gb.configure_side_bar()  # Muestra el panel lateral con opciones de filtros y columnas
             gb.configure_default_column(filter=True, sortable=True, editable=False)  # Configura filtro y ordenamiento
+            gb.configure_column("nombre", pinned='left')
+
             gridOptions = gb.build()
 
             # Mostrar la tabla interactiva con AgGrid
