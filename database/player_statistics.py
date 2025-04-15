@@ -112,7 +112,7 @@ class PlayerStatisticsManager(DatabaseManager):
         """
         self.execute_queries(query, results)
 
-    def fetch_general_statistics(self, year, season):
+    def fetch_general_statistics(self, year, season, match_week):
         query = f"""
             SELECT
             pl.player_name AS nombre,
@@ -127,8 +127,9 @@ class PlayerStatisticsManager(DatabaseManager):
             ON ps.player_id = pl.id
         left join team_stats ts
             ON ps.team = ts.team and ps.season = ts.season and ps.match_week = ts.match_week and ps.year = ts.year
-        where ps.year = {year}
-        and ps.season= {season}
+        {f"where ps.year = {year}" if year else ""}
+        {f"and ps.season= {season}" if season else ""}
+        {f"and ps.match_week= {match_week}" if match_week else ""}
         GROUP BY pl.id
         ORDER BY goles DESC
         """
@@ -176,6 +177,30 @@ class PlayerStatisticsManager(DatabaseManager):
         """
 
         return self.fetch_query(query)
+
+    def get_years(self):
+        """
+        Obtiene la lista de años disponibles.
+        """
+        query = f"SELECT DISTINCT {self.YEAR} FROM player_statistics ORDER BY {self.YEAR};"
+        df = pd.read_sql_query(query, self.engine)
+        return df[self.YEAR].tolist()
+
+    def get_bimestres(self, year):
+        """
+        Obtiene la lista de bimestres asociados a un año dado.
+        """
+        query = f"SELECT DISTINCT {self.SEASON} FROM player_statistics WHERE {self.YEAR} = ? ORDER BY {self.SEASON};"
+        df = pd.read_sql_query(query, self.engine, params=(year,))
+        return df[self.SEASON].tolist()
+
+    def get_weeks(self, year, bimestre):
+        """
+        Obtiene la lista de semanas asociadas a un año y bimestre dados.
+        """
+        query = f"SELECT DISTINCT {self.MATCH_WEEK} FROM player_statistics WHERE {self.YEAR} = ? AND {self.SEASON} = ? ORDER BY {self.MATCH_WEEK};"
+        df = pd.read_sql_query(query, self.engine, params=(year, bimestre))
+        return df[self.MATCH_WEEK].tolist()
 
     def delete_week_stats(self, year, season, match_week):
         query = f"DELETE FROM player_statistics WHERE {self.YEAR} = ? AND {self.SEASON} = ? AND {self.MATCH_WEEK} = ?"

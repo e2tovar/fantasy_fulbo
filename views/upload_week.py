@@ -14,19 +14,36 @@ from utils.streamlit_missmatched_players import identify_players
 def initialize_session_state():
     keys_defaults = {
         "admin_logged": False,
-        "week_uploaded": False,
-        "missmatched_players": [],
         "excel_uploaded": False,
         "excel_ok": False,
-        "uploaded_file": None,
-        "new_players_match": {}
+        "form_ok": False,
+        "file_path": None,
+        "new_players_match": {},
+        "week_uploaded": False,
     }
+
     for key, default in keys_defaults.items():
         if key not in st.session_state:
             st.session_state[key] = default
 
 
-initialize_session_state()
+def reset_session_state():
+    keys_defaults = {
+        "admin_logged": False,
+        "excel_uploaded": False,
+        "excel_ok": False,
+        "form_ok": False,
+        "file_path": None,
+        "new_players_match": {},
+        "week_uploaded": False,
+    }
+
+    for key, default in keys_defaults.items():
+        st.session_state[key] = default
+
+    # reset managers
+    st.cache_data.clear()
+    st.cache_resource.clear()
 
 
 @st.cache_resource
@@ -39,10 +56,6 @@ def get_managers():
     trm = TeamResultsManager()
     tsm = TeamStatsManager()
     return pm, psm, trm, tsm
-
-
-pm, psm, trm, tsm = get_managers()
-
 
 def authenticate_admin() -> bool:
     """
@@ -67,15 +80,16 @@ def upload_excel():
     """
     with st.expander("Cargar archivo Excel", expanded=True):
         st.info("Obteniendo los datos desde el Excel...")
-        uploaded_file = st.file_uploader("Subir archivo Excel", type=["xlsx"])
-        if uploaded_file:
+        file_path = st.file_uploader("Subir archivo Excel", type=["xlsx"])
+        if file_path:
             try:
-                missing_players = check_excel_players_names(uploaded_file, pm.excel_names)
+                missing_players = check_excel_players_names(file_path, pm.excel_names)
                 if missing_players:
                     identify_players(missing_players, pm)
-                st.session_state["uploaded_file"] = uploaded_file
+                st.session_state["file_path"] = file_path
                 st.session_state["excel_ok"] = True
-                st.success("Excel cargado correctamente.")
+                if not missing_players:
+                    st.rerun()
             except Exception as e:
                 st.error(f"Error al procesar el archivo Excel: {e}")
 
@@ -84,6 +98,7 @@ def process_week():
     """
     Procesa la carga de la semana, solicitando información adicional y actualizando datos.
     """
+    st.success("Excel cargado correctamente.")
     st.subheader("Cargar datos de la semana")
     with st.form(key="upload_week"):
         col1, col2, col3 = st.columns(3)
@@ -94,11 +109,11 @@ def process_week():
         with col3:
             match_week = st.text_input("Jornada: ")
 
-        submit = st.form_submit_button("Subir semana")
-        if submit:
+        if st.form_submit_button("Subir semana"):
             if not all([year, season, match_week]):
                 st.warning("Por favor, ingrese Año, Bimestre y Jornada.")
             else:
+                st.session_state['form_ok'] = True
                 try:
                     # Almacenar los valores en el estado de sesión
                     st.session_state["year"] = year
@@ -113,41 +128,73 @@ def process_week():
                         trm=trm,
                         pm=pm,
                         tsm=tsm,
-                        file=st.session_state["uploaded_file"]
+                        file=st.session_state["file_path"]
                     )
                     # Si existen selecciones de jugadores, se mapean
                     if st.session_state["new_players_match"]:
                         wdm.add_or_map_players(st.session_state["new_players_match"])
-                    missing_players = wdm.update_week()
-                    if missing_players:
-                        st.session_state["missmatched_players"] = missing_players
-                        st.error("Existen jugadores no identificados. Revise la información.")
-                    else:
-                        st.session_state["week_uploaded"] = True
-                        st.success("Semana subida correctamente.")
+                    # --- Aquí se sube la semana ---
+                    wdm.update_week()
+                    st.session_state["week_uploaded"] = True
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error al actualizar la semana: {e}")
 
 
+def show_results():
+    st.balloons()
+    st.success("Semana subida correctamente.")
+    try:
+        year = st.session_state.get("year")
+        season = st.session_state.get("season")
+        match_week = st.session_state.get("match_week")
 
-# --- Título principal ---
+        df_actualizado = psm.get_week_statistics(year, season, match_week)
+        st.dataframe(df_actualizado)
+    except Exception as e:
+        st.error(f"Error al obtener estadísticas: {e}")
+
+
+# --- INICIO APP ---
+initialize_session_state()
+pm, psm, trm, tsm = get_managers()
+
+# -- TITULO --
 st.header("Carga de datos semanales")
 
+
+st.write("""
+         Aquí podrás subir el excel de la semana para que se actualicen las estadísticas de jugadores y equipos.
+         """)
+col1, col2 = st.columns(2)
+with col1:
+    st.write(
+        """
+        ### A tener en cuenta:
+         - Si subes una semana que ya está en BD se soobrescribirá.
+         - El nombre del excel es importante para recuperar la fecha, respetar el formato dfel nombre.
+         - El excel debe estar guardado en xlsx.
+         - El formato de los exceles actuales es el que funciona, si se cambia el formato puede que falle
+         - Los nombres de los dos sheets que funcionan son Lista y Partido
+        """)
+with col2:
+    st.write(
+        """
+         ### Funciones pendientes a implementar:
+         - Mejorar Loging
+         - Resolver Autogoles desde la web
+         - Resolver Empates desde la web
+         - Implementar función para modificar jugadores
+         - Manejar posibles fallos
+        """)
+
+
 if authenticate_admin():
-    # Si aún no se ha cargado el Excel, se solicita cargarlo.
     if not st.session_state["excel_ok"]:
         upload_excel()
     elif not st.session_state["week_uploaded"]:
         process_week()
     else:
-        # --- show results ---
-        st.balloons()
-        try:
-            year = st.session_state.get("year")
-            season = st.session_state.get("season")
-            match_week = st.session_state.get("match_week")
-
-            df_actualizado = psm.get_week_statistics(year, season, match_week)
-            st.dataframe(df_actualizado)
-        except Exception as e:
-            st.error(f"Error al obtener estadísticas: {e}")
+        show_results()
+        reset_session_state()
+        st.button("Cargar otra Jornada")

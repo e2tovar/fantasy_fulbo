@@ -100,8 +100,8 @@ class WeekDataManager:
         Carga los datos de la jornada. Esta es una función crucial
         """
 
-        match_day = self.file_name.split('-')[0]
-        match_month = meses_a_numero[self.file_name.split('-')[1]]
+        match_day = self.file_name.split('-')[0].zfill(2)
+        match_month = meses_a_numero[self.file_name.split('-')[1]].zfill(2)
         match_year = self.year
 
         df_resultado, df_stats = self.__read_team_data()
@@ -111,15 +111,13 @@ class WeekDataManager:
         df_players['year'] = self.year
         df_players['season'] = self.season
         df_players['match_week'] = self.match_week
-        df_players['date'] = f"{match_year}-{match_month}-{match_day}"
+        df_players['date'] = f"{match_day}/{match_month}/{match_year}"
 
         self.__save_week_team_result_from_df(df_resultado, self.trm)
         self.__save_week_team_stats_from_df(df_stats, self.tsm)
         self.__save_week_player_stats_from_df(df_players, self.psm)
 
         logging.info(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
-
-        return []
 
     def __read_team_data(self):
         df_resultado, df_stats = read_excel_teams_results(self.file_path)
@@ -156,7 +154,6 @@ class WeekDataManager:
         self.tsm.delete_week_stats(self.year, self.season, self.match_week)
 
     def add_or_map_players(self, missplayers_dict):
-        print('pingaaaaaaaaaaaa')
         self.excel_names_map = {}
         for excel_name, name in missplayers_dict.items():
             if '-new-' in name:

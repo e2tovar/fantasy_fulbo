@@ -41,4 +41,4 @@ pg.run()
 
 # --- SHARED ON ALL PAGES ---
 st.logo("assets/logo.png", size="large")
-st.sidebar.text("Hecho con ❤️ por Eddy Tovar")
+st.sidebar.text("Hecho con ❤️ por FrEddy")
