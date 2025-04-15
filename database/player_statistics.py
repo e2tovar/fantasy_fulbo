@@ -61,6 +61,7 @@ class PlayerStatisticsManager(DatabaseManager):
         (player_id, year, season, match_week, date, team, goals, assists, mvp, yellow_card, red_card,
         votes, total_votes, note)
         """
+
         # Agregamos MVP a 0
         df['mvp'] = 0
 
@@ -114,7 +115,7 @@ class PlayerStatisticsManager(DatabaseManager):
     def fetch_general_statistics(self, year, season):
         query = f"""
             SELECT
-            pl.name_app AS nombre,
+            pl.player_name AS nombre,
             pl.field_position_short as posicion_campo,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
@@ -136,7 +137,7 @@ class PlayerStatisticsManager(DatabaseManager):
     def get_week_statistics(self, year, season, match_week):
         query = f"""
         SELECT
-            pl.name_app AS player_name,
+            pl.player_name AS player_name,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
             SUM(ps.mvp) AS mvp,

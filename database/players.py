@@ -5,8 +5,8 @@ import pandas as pd
 class PlayerManager(DatabaseManager):
     # Define class-level constants for column names
     ID = "id"
-    NAME_EXCEL = "name_excel"
-    NAME_APP = "name_app"
+    EXCEL_NAME = "excel_name"
+    PLAYER_NAME = "player_name"
     POSITION = "field_position"
     POSITION_SHORT = "field_position_short"
     PRICE = "price"
@@ -15,10 +15,11 @@ class PlayerManager(DatabaseManager):
         super().__init__()
         # Pre-fetch and cache the mappings
         self.excel_name_id_map = self._fetch_excel_name_id_map()
+        self.excel_names = self.excel_name_id_map.keys()
         self.app_name_id_map = self._fetch_app_name_id_map()
 
     def _fetch_excel_name_id_map(self):
-        query = f"SELECT {self.NAME_EXCEL}, {self.ID} FROM players"
+        query = f"SELECT {self.EXCEL_NAME}, {self.ID} FROM players"
         try:
             players = self.fetch_query(query)
             return {player[0]: player[1] for player in players}
@@ -27,7 +28,7 @@ class PlayerManager(DatabaseManager):
             return {}
 
     def _fetch_app_name_id_map(self):
-        query = f"SELECT {self.NAME_APP}, {self.ID} FROM players"
+        query = f"SELECT {self.PLAYER_NAME}, {self.ID} FROM players"
         try:
             players = self.fetch_query(query)
             return {player[0]: player[1] for player in players}
@@ -39,26 +40,24 @@ class PlayerManager(DatabaseManager):
         self.execute_query(f"""
             CREATE TABLE IF NOT EXISTS players(
                 {self.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-                {self.NAME_EXCEL} TEXT NOT NULL,
-                {self.NAME_APP} TEXT NOT NULL,
+                {self.EXCEL_NAME} TEXT NOT NULL,
+                {self.PLAYER_NAME} TEXT NOT NULL,
                 {self.POSITION} TEXT NOT NULL,
                 {self.POSITION_SHORT} TEXT NOT NULL,
                 {self.PRICE} REAL NOT NULL
             )
         """)
 
-    def add_player(self, name, name_fantasy, position, price):
-        allowed_positions = {"Delantero", "Mediocampo", "Defensor"}
-        if price < 0:
-            raise ValueError("Price cannot be negative")
-        if position not in allowed_positions:
-            raise ValueError(f"Invalid position: {position}")
+    def add_player(self, excel_name, player_name, field_position):
+        allowed_positions = {"Delantero", "Mediocampista", "Defensor"}
+        if field_position not in allowed_positions:
+            raise ValueError(f"Invalid position: {field_position}")
 
-        map_position_short = {"Delantero": "DEL", "Mediocampo": "MED", "Defensor": "DEF"}
-        position_short = map_position_short[position]
+        map_position_short = {"Delantero": "DEL", "Mediocampista": "MED", "Defensor": "DEF"}
+        position_short = map_position_short[field_position]
 
-        query = f"INSERT INTO players({self.NAME_EXCEL}, {self.NAME_APP}, {self.POSITION}, {self.POSITION_SHORT}, {self.PRICE}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
-        id = self.execute_query(query, (name, name_fantasy, position, position_short, price))
+        query = f"INSERT INTO players({self.EXCEL_NAME}, {self.PLAYER_NAME}, {self.POSITION}, {self.POSITION_SHORT}) VALUES (?, ?, ?, ?) RETURNING {self.ID}"
+        id = self.execute_query(query, (excel_name, player_name, field_position, position_short))
         # Invalidate caches and refresh
         self.excel_name_id_map = self._fetch_excel_name_id_map()
         self.app_name_id_map = self._fetch_app_name_id_map()

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 def read_excel_teams_results(file_path):
     # Lee team resultados. Tabla 1
     # -----------------------------------------------------------------------------------------------------------------
@@ -58,20 +57,7 @@ def read_excel_teams_results(file_path):
 def read_excel_players_stats(file_path):
     # Lee tabla de players stats. Tabla 3
     # -----------------------------------------------------------------------------------------------------------------
-    # Primero recopilamos todos los nombres desde la hoja 'Lista'
-    try:
-        df_names = pd.read_excel(file_path, sheet_name='Lista', skiprows=1)
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} was not found.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while reading the Excel file: {e}")
-        return None
-
-    df_names.drop(columns=['Orden'], inplace=True)
-    df_names.columns = ['name', 'team']
-    # Eliminate every row name starting by 'Autogol'
-    df_names = df_names[~df_names['name'].str.startswith('Autogol')].copy()
+    df_names = _read_excel_names(file_path)
 
     try:
         df_player_stats = pd.read_excel(file_path, skiprows=3, sheet_name='Partido', usecols="L:O")
@@ -107,6 +93,32 @@ def read_excel_players_stats(file_path):
     return df_stats
 
 
+def check_excel_players_names(file, db_excel_names):
+    df_names = _read_excel_names(file)
+    excel_names = df_names['name'].unique()
+
+    # get not matching list
+    mismatched_names = [name for name in excel_names if name not in db_excel_names]
+
+    return mismatched_names
+
+def _read_excel_names(file_path):
+    try:
+        df_names = pd.read_excel(file_path, sheet_name='Lista', skiprows=1)
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred while reading the Excel file: {e}")
+        return None
+
+    df_names.drop(columns=['Orden'], inplace=True)
+    df_names.columns = ['name', 'team']
+    # Eliminate every row name starting by 'Autogol'
+    df_names = df_names[~df_names['name'].str.startswith('Autogol')].copy()
+
+    return df_names
+
 def _resolve_ties(df_stats):
     # Calculate goal difference
     df_stats['goal_difference'] = df_stats['goals'] - df_stats['goals_against']
@@ -131,5 +143,3 @@ def _resolve_ties(df_stats):
     df_stats.drop(['goal_difference'], axis=1, inplace=True)
 
     return df_stats
-
-
