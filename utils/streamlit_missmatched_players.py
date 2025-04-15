@@ -11,9 +11,6 @@ def identify_players(missmatched_players, pm: PlayerManager):
 
     st.write("Antes de continuar debes seleccionar quienes son estos jugadores")
 
-    if 'player_selections' not in st.session_state:
-        st.session_state.player_selections = {}
-
     with st.form('missing_players'):
         for player in missmatched_players:
             position_selector = ''
@@ -28,11 +25,11 @@ def identify_players(missmatched_players, pm: PlayerManager):
                     options=['Selecciona posición', 'Defensa', 'Mediocampista', 'Delantero'],
                     key=f"position_{player}")
 
-            st.session_state.player_selections[player] = ('-new-' + position_selector) if position_selector else selected_maps
+            st.session_state.new_players_match[player] = ('-new-' + position_selector) if position_selector else selected_maps
 
         if st.form_submit_button("Continuar.."):
             map_missplayers = {}
-            for player, selection in st.session_state.player_selections.items():
+            for player, selection in st.session_state.new_players_match.items():
                 map_missplayers[player] = selection
                 if selection == 'Selecciona ...':
                     st.warning('Por favor seleccione una opción para cada jugador')
@@ -51,7 +48,6 @@ def add_or_map_players(pm: PlayerManager):
     for excel_name, name in st.session_state['map_missplayers'].items():
         if '-new-' in name:
             field_pos = name.split('-new-')[1]
-            print(f'aaaaaaaaa {field_pos}')
             pm.add_player(excel_name, excel_name, field_pos)
         else:
             # Map player
