@@ -4,31 +4,34 @@ import sqlalchemy
 
 class DatabaseManager:
     def __init__(self):
-        self.connection = sqlite3.connect("data/fantasy.db")
+        self.con_path = "data/fantasy.db"
         self.engine = sqlalchemy.create_engine("sqlite:///data/fantasy.db")
-        self.cursor = self.connection.cursor()
-
-    def __enter__(self):
-        return self.cursor
-
-    def __exit__(self):
-        self.connection.commit()
-        self.connection.close()
 
     def execute_query(self, query, params=()):
-        self.cursor.execute(query, params)
-        results = self.cursor.fetchall()
-        self.connection.commit()
+        connection = sqlite3.connect(self.con_path)
+        cursor = connection.cursor()
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        connection.commit()
+        cursor.close()
+        connection.close()
         return results
 
     def execute_queries(self, query, params=()):
-        self.cursor.executemany(query, params)
-        self.connection.commit()
-
+        connection = sqlite3.connect(self.con_path)
+        cursor = connection.cursor()
+        cursor.executemany(query, params)
+        connection.commit()
+        cursor.close()
+        connection.close()
 
     def fetch_query(self, query, params=()):
-        self.cursor.execute(query, params)
-        results = self.cursor.fetchall()
+        connection = sqlite3.connect(self.con_path)
+        cursor = connection.cursor()
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        cursor.close()
+        connection.close()
         return results
 
     def delete_table(self, table_name):

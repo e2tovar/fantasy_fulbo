@@ -1,57 +1,44 @@
 import streamlit as st
-import pandas as pd
-from database.player_statistics import PlayerStatisticsManager
 
-# Configuración inicial
-st.title("Fantasy del fulbol")
+st.set_page_config(
+    page_title="PreBar League Page",
+    page_icon="🏆<e",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 
-# Opciones de navegación
-menu = st.sidebar.selectbox(
-    "Menú",
-    ["Inicio", "Seleccionar Equipo", "Estadísticas", "Ranking"])
+# --- PAGE SETUP ---
+inicio_page = st.Page(
+    page="views/home.py",
+    title="Inicio",
+    icon=":material/home:",
+    default=True
+)
 
-if menu == "Inicio":
-    st.subheader("¡Bienvenido!")
-    st.write("""
-    Esta aplicación te permite participar en un Fantasy personal con tus amigos.
-    Selecciona un equipo de jugadores, compite por ser el mejor y observa las estadísticas en tiempo real.
-    Usa el menú de la izquierda para navegar por las secciones.
-    """)
+estadisticas_page = st.Page(
+    page="views/stats.py",
+    title="Estadísticas",
+    icon=":material/sports_soccer:"
+)
 
-elif menu == "Seleccionar Equipo":
-    # Cargar datos de jugadores
-    jugadores_df = pd.DataFrame(jugadores)
-    jugadores_df.sort_values("Media Fantasy", inplace=True, ascending=False)
-    presupuesto = 77  # Presupuesto ficticio para prueba
+actualiza_jornada_page = st.Page(
+    page="views/upload_week.py",
+    title="Subir Jornada(Admin)",
+    icon=":material/publish:"
+)
 
-    # Mostrar tabla de jugadores
-    st.subheader("Jugadores disponibles")
-    st.dataframe(jugadores_df)
+# --- NAVIGATION SETUP ---
+pg = st.navigation(
+    {
+        "": [inicio_page, estadisticas_page],
+        "admin": [actualiza_jornada_page]
+    }
+)
 
-    # Seleccionar jugadores
-    st.subheader("Selecciona tu equipo")
-    seleccionados = st.multiselect("Jugadores", jugadores_df["Nombre"])
+pg.run()
 
-    # Calcular costo total
-    costo_total = sum(jugadores_df[jugadores_df["Nombre"].isin(seleccionados)]["Precio"])
-    st.write(f"Presupuesto utilizado: {costo_total} / {presupuesto}")
 
-    # Validar selección
-    if len(seleccionados) == 7 and costo_total <= presupuesto:
-        st.success("¡Equipo válido!")
-    elif len(seleccionados) != 7:
-        st.error("Debes seleccionar exactamente 7 jugadores.")
-    elif costo_total > presupuesto:
-        st.error("Has excedido el presupuesto disponible.")
-
-elif menu == "Estadísticas":
-    st.header("Estadísticas Generales")
-    weekm = PlayerStatisticsManager()
-    gen_df = weekm.fetch_general_statistics()
-    st.dataframe(gen_df)
-    # Crear un control para seleccionar la página
-
-elif menu == "Ranking":
-    st.header("Ranking de Participantes")
-    # Mostrar ranking
+# --- SHARED ON ALL PAGES ---
+st.logo("assets/logo.png", size="large")
+st.sidebar.text("Hecho con ❤️ por Eddy Tovar")

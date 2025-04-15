@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 
 from utils.get_data_from_excel import read_excel_teams_results, read_excel_players_stats
-from utils.get_data_from_app import scrap_app_week_data
+from utils.vars import meses_a_numero
 
 from database.player_statistics import PlayerStatisticsManager
 from database.team_results import TeamResultsManager
@@ -11,15 +11,20 @@ from database.players import PlayerManager
 
 
 class WeekDataManager:
-    def __init__(self, year: int, season: str, match_week: int, week_note: str = '', file=None):
+    def __init__(self, year: int, season: str, match_week: int,
+                 trm: TeamResultsManager, tsm: TeamStatsManager, psm: PlayerStatisticsManager, pm: PlayerManager,
+                 week_note: str = '', file=None,):
         self.year = year
         self.season = season
         self.match_week = match_week
         self.week_note = week_note
-        self.trm = TeamResultsManager()
-        self.tsm = TeamStatsManager()
-        self.psm = PlayerStatisticsManager()
+        self.trm = trm
+        self.tsm = tsm
+        self.psm = psm
+        self.pm = pm
         self.file_path = self._build_path(file)
+        self.file_name = file.name.split('.')[0]
+        self.excel_names_map = {}
 
     def _build_path(self, file):
         if file:
@@ -77,11 +82,6 @@ class WeekDataManager:
             psm.GOALS,
             psm.OWN_GOALS,
             psm.ASSISTS,
-            psm.MVP,
-            psm.YELLOW_CARD,
-            psm.RED_CARD,
-            psm.VOTES,
-            psm.TOTAL_VOTES,
             psm.NOTE
             }
         if not required_columns.issubset(df.columns):
@@ -99,14 +99,27 @@ class WeekDataManager:
         """
         Carga los datos de la jornada. Esta es una función crucial
         """
+
+        match_day = self.file_name.split('-')[0]
+        match_month = meses_a_numero[self.file_name.split('-')[1]]
+        match_year = self.year
+
         df_resultado, df_stats = self.__read_team_data()
         df_players = self.__read_player_data()
+
+        # add dates
+        df_players['year'] = self.year
+        df_players['season'] = self.season
+        df_players['match_week'] = self.match_week
+        df_players['date'] = f"{match_year}-{match_month}-{match_day}"
 
         self.__save_week_team_result_from_df(df_resultado, self.trm)
         self.__save_week_team_stats_from_df(df_stats, self.tsm)
         self.__save_week_player_stats_from_df(df_players, self.psm)
 
         logging.info(f"Team results for week {self.match_week} for season {self.season} loaded successfully.")
+
+        return []
 
     def __read_team_data(self):
         df_resultado, df_stats = read_excel_teams_results(self.file_path)
@@ -128,30 +141,12 @@ class WeekDataManager:
             logger.exception(f"Failed to read player data from Excel: {e}")
             df_excel = pd.DataFrame()
 
-        # from app
-        try:
-            df_app = scrap_app_week_data(
-                stats_year=self.year, stats_season=self.season, stats_week=self.match_week, note=self.week_note)
-        except Exception as e:
-            logger.exception(f"Failed to scrape player data from app: {e}")
-            df_app = pd.DataFrame()
-
         # mapping to id
-        pm = PlayerManager()
-        excel_map = pm.excel_name_id_map
-        app_map = pm.app_name_id_map
-        df_excel['player_id'] = df_excel['name'].map(excel_map)
-        df_app['player_id'] = df_app['name'].map(app_map)
-        df_app.drop(columns=['name'], inplace=True)
+        df_excel['name'] = df_excel['name'].replace(self.excel_names_map)
+        df_excel['player_id'] = df_excel['name'].map(self.pm.excel_name_id_map)
+        df_excel['note'] = self.week_note
 
-        # merge
-        df_players = pd.merge(df_excel, df_app, on=['player_id'], how='outer', validate='one_to_one')
-        if df_players['player_id'].isnull().any():
-            raise ValueError("Merged data contains missing player IDs.")
-
-        df_players['note'] = self.week_note
-
-        return df_players
+        return df_excel
 
     def delete_week(self) -> None:
         """
@@ -159,3 +154,14 @@ class WeekDataManager:
         """
         self.trm.delete_week_results(self.year, self.season, self.match_week)
         self.tsm.delete_week_stats(self.year, self.season, self.match_week)
+
+    def add_or_map_players(self, missplayers_dict):
+        print('pingaaaaaaaaaaaa')
+        self.excel_names_map = {}
+        for excel_name, name in missplayers_dict.items():
+            if '-new-' in name:
+                field_pos = name.split('-new-')[1]
+                self.pm.add_player(excel_name, excel_name, field_pos)
+            else:
+                # Map player
+                self.excel_names_map[excel_name] = name
