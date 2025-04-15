@@ -121,7 +121,10 @@ class PlayerStatisticsManager(DatabaseManager):
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
             SUM(ts.goals) as goles_anotados_equipo,
-            SUM(ts.goals_against) as goles_recibidos_equipo
+            SUM(ts.goals_against) as goles_recibidos_equipo,
+            SUM(ts.wins) as partidos_ganados,
+            SUM(ts.defeats) as partidos_perdidos,
+            SUM(ts.draws) as partidos_empatados
         FROM player_statistics ps
         left JOIN players pl
             ON ps.player_id = pl.id

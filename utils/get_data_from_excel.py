@@ -32,6 +32,16 @@ def read_excel_teams_results(file_path):
 
     df_stats['own_goal'] = 0
 
+    # ganados, perdidos, empatados
+    df_stats['local_wins'] = df_stats.apply(lambda x: 1 if x['local_goals'] > x['away_goals'] else 0, axis=1)
+    df_stats['local_defeats'] = df_stats.apply(lambda x: 1 if x['away_goals'] > x['local_goals'] else 0, axis=1)
+    df_stats['local_draws'] = df_stats.apply(lambda x: 1 if x['local_goals'] == x['away_goals'] else 0, axis=1)
+    df_stats['away_wins'] = df_stats.apply(lambda x: 1 if x['away_goals'] > x['local_goals'] else 0, axis=1)
+    df_stats['away_defeats'] = df_stats.apply(lambda x: 1 if x['local_goals'] > x['away_goals'] else 0, axis=1)
+    df_stats['away_draws'] = df_stats.apply(lambda x: 1 if x['local_goals'] == x['away_goals'] else 0, axis=1)
+
+
+    # puntos
     df_stats['local_points'] = df_stats.apply(
         lambda x: 3 if x['local_goals'] > x['away_goals']
         else 1 if x['local_goals'] == x['away_goals'] else 0, axis=1)
@@ -40,10 +50,16 @@ def read_excel_teams_results(file_path):
         else 1 if x['away_goals'] == x['local_goals'] else 0, axis=1)
 
     # Rename
-    local_stats = df_stats[['local', 'local_goals', 'away_goals', 'local_points']].rename(
-        columns={'local': 'team', 'local_goals': 'goals', 'away_goals': 'goals_against', 'local_points': 'points'})
-    away_stats = df_stats[['away', 'away_goals', 'local_goals', 'away_points']].rename(
-        columns={'away': 'team', 'away_goals': 'goals', 'local_goals': 'goals_against', 'away_points': 'points'})
+    local_stats = df_stats[[
+        'local', 'local_goals', 'away_goals', 'local_points', 'local_wins', 'local_defeats', 'local_draws', 'own_goal']].rename(
+        columns={
+            'local': 'team', 'local_goals': 'goals', 'away_goals': 'goals_against', 'local_points': 'points',
+            'local_wins': 'wins', 'local_defeats': 'defeats', 'local_draws': 'draws'})
+    away_stats = df_stats[[
+        'away', 'away_goals', 'local_goals', 'away_points', 'away_wins', 'away_defeats', 'away_draws', 'own_goal']].rename(
+        columns={
+            'away': 'team', 'away_goals': 'goals', 'local_goals': 'goals_against', 'away_points': 'points',
+            'away_wins': 'wins', 'away_defeats': 'defeats', 'away_draws': 'draws'})
 
     df_stats = pd.concat([local_stats, away_stats])
     df_stats = df_stats.groupby('team').sum().reset_index()

@@ -39,7 +39,7 @@ class WeekDataManager:
         :param tsm: Instance of TeamStatsManager.
         """
         required_columns = {tsm.YEAR, tsm.SEASON, tsm.MATCH_WEEK, tsm.TEAM, tsm.GOALS, tsm.GOALS_AGAINST,
-                            tsm.POINTS, tsm.POSITION}
+                            tsm.POINTS, tsm.POSITION, tsm.WINS, tsm.DRAWS, tsm.DEFEATS}
         if not required_columns.issubset(df.columns):
             raise ValueError(f"DataFrame is missing required columns: {required_columns - set(df.columns)}")
 

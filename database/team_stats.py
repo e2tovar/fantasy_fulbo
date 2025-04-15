@@ -12,6 +12,9 @@ class TeamStatsManager(DatabaseManager):
     GOALS_AGAINST = "goals_against"
     POINTS = "points"
     POSITION = "position"
+    WINS = "wins"
+    DRAWS = "draws"
+    DEFEATS = "defeats"
 
     def create_table(self):
         self.execute_query(f"""
@@ -67,14 +70,17 @@ class TeamStatsManager(DatabaseManager):
              row.goals,
              row.goals_against,
              row.points,
-             row.position)
+             row.position,
+             row.wins,
+             row.draws,
+             row.defeats)
             for _, row in df.iterrows()
         ]
 
         # Validate results structure and data types
         for stat in stats:
-            if not isinstance(stat, tuple) or len(stat) != 8:
-                raise ValueError("Each result must be a tuple with 8 elements.")
+            if not isinstance(stat, tuple) or len(stat) != 11:
+                raise ValueError("Each result must be a tuple with 11 elements.")
             if not all(isinstance(field, (int, str)) for field in stat):
                 raise TypeError("Each field in the result tuple must be of type int or str.")
 
@@ -90,8 +96,11 @@ class TeamStatsManager(DatabaseManager):
             {self.GOALS},
             {self.GOALS_AGAINST},
             {self.POINTS},
-            {self.POSITION})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            {self.POSITION},
+            {self.WINS},
+            {self.DRAWS},
+            {self.DEFEATS})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.execute_queries(query, stats)
 
