@@ -184,6 +184,7 @@ with col2:
          - Mejorar Loging
          - Resolver Autogoles desde la web
          - Resolver Empates desde la web
+         - Posibilidad de agregar MVP y mejor GOL manualmente desde el BAR (antes el MVP era por la app pero se elimina)
          - Implementar función para modificar jugadores
          - Leer los excels directamente de la web
         """)

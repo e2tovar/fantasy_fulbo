@@ -116,17 +116,20 @@ class PlayerStatisticsManager(DatabaseManager):
         query = f"""
             SELECT
             pl.player_name AS nombre,
+            count(1) as juegos,
             pl.field_position_short as posicion_campo,
             SUM(ps.goals) AS goles,
             SUM(ps.assists) AS asistencias,
-            SUM(ps.mvp) AS mvp,
             SUM(ts.goals) as goles_anotados_equipo,
             SUM(ts.goals_against) as goles_recibidos_equipo
         FROM player_statistics ps
         left JOIN players pl
             ON ps.player_id = pl.id
         left join team_stats ts
-            ON ps.team = ts.team and ps.season = ts.season and ps.match_week = ts.match_week and ps.year = ts.year
+            ON ps.team = ts.team
+            AND ps.season = ts.season
+            AND ps.match_week = ts.match_week
+            AND ps.year = ts.year
         {f"where ps.year = {year}" if year else ""}
         {f"and ps.season= {season}" if season else ""}
         {f"and ps.match_week= {match_week}" if match_week else ""}
