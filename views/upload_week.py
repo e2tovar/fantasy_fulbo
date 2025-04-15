@@ -185,7 +185,7 @@ with col2:
          - Resolver Autogoles desde la web
          - Resolver Empates desde la web
          - Implementar función para modificar jugadores
-         - Manejar posibles fallos
+         - Leer los excels directamente de la web
         """)
 
 
