@@ -171,24 +171,25 @@ with col1:
     st.write(
         """
         ### A tener en cuenta:
-         - Si subes una semana que ya está en BD se soobrescribirá.
-         - El nombre del excel es importante para recuperar la fecha, respetar el formato dfel nombre.
+         - Si subes una semana que ya está en BD se sobrescribirá.
+         - El nombre del excel es importante para recuperar la fecha, respetar el formato del nombre. (22-febrero.xlsx)
          - El excel debe estar guardado en xlsx.
-         - El formato de los exceles actuales es el que funciona, si se cambia el formato puede que falle
+         - El formato de los exceles actuales es el que funciona, si se cambia el formato puede que falle.
          - Los nombres de los dos sheets que funcionan son Lista y Partido
         """)
 with col2:
     st.write(
         """
          ### Funciones pendientes a implementar:
-         - Mejorar Loging
+         - Mejorar Logging
          - Resolver Autogoles desde la web
          - Resolver Empates desde la web
          - Posibilidad de agregar MVP y mejor GOL manualmente desde el BAR (antes el MVP era por la app pero se elimina)
-         - Implementar función para modificar jugadores
-         - Leer los excels directamente de la web
+         - Implementar función para modificar jugadores.
+         - Leer los excels directamente de la web.
         """)
 
+st.markdown('---')
 
 if authenticate_admin():
     if not st.session_state["excel_ok"]:

@@ -39,11 +39,14 @@ st.header("Estadísticas Generales")
 st.markdown(
     """
         Ajusta los filtros para visualizar las estadísticas basadas en los datos asociados.
+
         Agregaremos ChatGPT en el futuro para que haga queries
+
         Notas:
         - En el año 2023 no contábamos los bimestres
     """
     )
+st.markdown("---")
 
 # Selector para el nivel de agregación usando un radio button
 nivel_agregacion = st.radio("Seleccione el nivel de agregación:", options=["Año", "Bimestre", "Semana"], index=1)
