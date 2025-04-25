@@ -101,29 +101,34 @@ def process_week():
     st.success(f"Excel cargado correctamente: {st.session_state["file_path"].name}")
     st.subheader("Cargar datos de la semana")
     with st.form(key="upload_week"):
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            year = st.text_input("Año: ")
+            match_year = st.text_input("Año: ")
         with col2:
-            season = st.text_input("Bimestre: ")
+            match_month = st.selectbox("Mes: ", [i for i in range(1, 13)])
         with col3:
-            match_week = st.text_input("Jornada: ")
+            match_day = st.selectbox("Día: ", [i for i in range(1, 32)])
+        with col4:
+            season = st.selectbox("Bimestre: ", [i for i in range(1, 7)])
+        with col5:
+            match_week = st.selectbox("Jornada: ", [i for i in range(1, 11)])
 
         if st.form_submit_button("Subir semana"):
-            if not all([year, season, match_week]):
+            if not all([match_year, season, match_week]):
                 st.warning("Por favor, ingrese Año, Bimestre y Jornada.")
             else:
                 st.session_state['form_ok'] = True
                 try:
                     # Almacenar los valores en el estado de sesión
-                    st.session_state["year"] = year
+                    st.session_state["year"] = match_year
                     st.session_state["season"] = season
                     st.session_state["match_week"] = match_week
 
                     wdm = WeekDataManager(
-                        year=year,
+                        year=match_year,
                         season=season,
                         match_week=match_week,
+                        match_date=f"{str(match_day).zfill(2)}/{str(match_month).zfill(2)}/{match_year}",
                         psm=psm,
                         trm=trm,
                         pm=pm,

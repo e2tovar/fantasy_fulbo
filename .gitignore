@@ -2,4 +2,4 @@ venv/
 *pyc
 .env
 .qodo
-data/fantasy_bk.db
+*.bk

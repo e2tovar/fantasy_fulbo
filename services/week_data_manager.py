@@ -11,12 +11,13 @@ from database.players import PlayerManager
 
 
 class WeekDataManager:
-    def __init__(self, year: int, season: str, match_week: int,
+    def __init__(self, year: int, season: str, match_week: int, match_date: str,
                  trm: TeamResultsManager, tsm: TeamStatsManager, psm: PlayerStatisticsManager, pm: PlayerManager,
                  week_note: str = '', file=None,):
         self.year = year
         self.season = season
         self.match_week = match_week
+        self.match_date = match_date
         self.week_note = week_note
         self.trm = trm
         self.tsm = tsm
@@ -100,9 +101,9 @@ class WeekDataManager:
         Carga los datos de la jornada. Esta es una función crucial
         """
 
-        match_day = self.file_name.split('-')[0].zfill(2)
-        match_month = meses_a_numero[self.file_name.split('-')[1]].zfill(2)
-        match_year = self.year
+        # match_day = self.file_name.split('-')[0].zfill(2)
+        # match_month = meses_a_numero[self.file_name.split('-')[1]].zfill(2)
+        # match_year = self.year
 
         df_resultado, df_stats = self.__read_team_data()
         df_players = self.__read_player_data()
@@ -111,7 +112,7 @@ class WeekDataManager:
         df_players['year'] = self.year
         df_players['season'] = self.season
         df_players['match_week'] = self.match_week
-        df_players['date'] = f"{match_day}/{match_month}/{match_year}"
+        df_players['date'] = self.match_date
 
         self.__save_week_team_result_from_df(df_resultado, self.trm)
         self.__save_week_team_stats_from_df(df_stats, self.tsm)
