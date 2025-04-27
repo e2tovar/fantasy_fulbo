@@ -10,20 +10,20 @@ st.set_page_config(
 
 # --- PAGE SETUP ---
 inicio_page = st.Page(
-    page="views/home.py",
+    page="views/home_page.py",
     title="Inicio",
     icon=":material/home:",
     default=True
 )
 
 estadisticas_page = st.Page(
-    page="views/stats.py",
+    page="views/stats_page.py",
     title="Estadísticas",
     icon=":material/sports_soccer:"
 )
 
 actualiza_jornada_page = st.Page(
-    page="views/upload_week.py",
+    page="views/upload_week_page.py",
     title="Subir Jornada(Admin)",
     icon=":material/publish:"
 )

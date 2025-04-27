@@ -13,3 +13,12 @@ meses_a_numero = {
             'noviembre': '11',
             'diciembre': '12'
         }
+
+meses_a_bimentre = {
+            1: 1, 2: 1,  # January-February
+            3: 2, 4: 2,  # March-April
+            5: 3, 6: 3,  # May-June
+            7: 4, 8: 4,  # July-August
+            9: 5, 10: 5, # September-October
+            11: 6, 12: 6 # November-December
+        }

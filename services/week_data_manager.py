@@ -13,7 +13,7 @@ from database.players import PlayerManager
 class WeekDataManager:
     def __init__(self, year: int, season: str, match_week: int, match_date: str,
                  trm: TeamResultsManager, tsm: TeamStatsManager, psm: PlayerStatisticsManager, pm: PlayerManager,
-                 week_note: str = '', file=None,):
+                 week_note: str = '', file=None, autogol_players=None):
         self.year = year
         self.season = season
         self.match_week = match_week
@@ -26,6 +26,7 @@ class WeekDataManager:
         self.file_path = self._build_path(file)
         self.file_name = file.name.split('.')[0]
         self.excel_names_map = {}
+        self.autogol_players = autogol_players
 
     def _build_path(self, file):
         if file:
@@ -135,7 +136,7 @@ class WeekDataManager:
 
         # From excel
         try:
-            df_excel = read_excel_players_stats(self.file_path)
+            df_excel = read_excel_players_stats(self.file_path, self.autogol_players)
         except Exception as e:
             logger.exception(f"Failed to read player data from Excel: {e}")
             df_excel = pd.DataFrame()

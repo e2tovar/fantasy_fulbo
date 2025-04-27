@@ -1,4 +1,5 @@
 import pandas as pd
+from utils.streamlit_notifications import autogol_dialog
 
 def read_excel_teams_results(file_path):
     # Lee team resultados. Tabla 1
@@ -70,7 +71,7 @@ def read_excel_teams_results(file_path):
     return df_resultado, df_stats
 
 
-def read_excel_players_stats(file_path):
+def read_excel_players_stats(file_path, dict_names_own_goal):
     # Lee tabla de players stats. Tabla 3
     # -----------------------------------------------------------------------------------------------------------------
     df_names = _read_excel_names(file_path)
@@ -78,28 +79,19 @@ def read_excel_players_stats(file_path):
     try:
         df_player_stats = pd.read_excel(file_path, skiprows=3, sheet_name='Partido', usecols="L:O")
     except Exception as e:
-        print(f"An error occurred while reading the player stats: {e}")
-        return None
+        raise (f"An error occurred while reading the player stats: {e}")
 
     df_player_stats.columns = ['name', 'team', 'goals', 'assists']
     df_player_stats.dropna(how='all', inplace=True, subset=['goals', 'assists'])
 
     df_stats = df_player_stats.merge(df_names, on=['name', 'team'], how='outer').copy()
-
-    # Maneja autogoles. Localiza palabra Autogol en la columna 'name'
-    autogol_indices = df_stats[df_stats['name'].str.startswith('Autogol')].index
-    for index in autogol_indices:
-        print(f"Parece que hay un Autogol: {df_stats.loc[index, 'name']}")
-        print("Selecciona el autor de este autogol: ")
-        print(df_names)
-        index_name = input("Selecciona un número de los anteriores")
-        name = df_names.loc[int(index_name), 'name']
-        df_stats.loc[df_stats['name'] == name, 'own_goals'] = df_stats.loc[index, 'goals']
-    else:
-        df_stats['own_goals'] = 0
-
-    df_stats.drop(autogol_indices, inplace=True)
     df_stats.fillna(0, inplace=True)
+
+
+    # Add own goals
+    df_stats['own_goals'] = df_stats['name'].map(dict_names_own_goal)
+    df_stats['own_goals'] = df_stats['own_goals'].fillna(0)
+
 
     # to int
     df_stats['goals'] = df_stats['goals'].astype(int)

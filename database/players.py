@@ -1,6 +1,6 @@
 from .database import DatabaseManager
 import pandas as pd
-
+from functools import lru_cache
 
 class PlayerManager(DatabaseManager):
     # Define class-level constants for column names
@@ -18,6 +18,7 @@ class PlayerManager(DatabaseManager):
         self.excel_names = self.excel_name_id_map.keys()
         self.app_name_id_map = self._fetch_app_name_id_map()
 
+    @lru_cache(maxsize=1)
     def _fetch_excel_name_id_map(self):
         query = f"SELECT {self.EXCEL_NAME}, {self.ID} FROM players"
         try:
