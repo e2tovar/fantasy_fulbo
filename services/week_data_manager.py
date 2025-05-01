@@ -154,13 +154,3 @@ class WeekDataManager:
         """
         self.trm.delete_week_results(self.year, self.season, self.match_week)
         self.tsm.delete_week_stats(self.year, self.season, self.match_week)
-
-    def add_or_map_players(self, missplayers_dict):
-        self.excel_names_map = {}
-        for excel_name, name in missplayers_dict.items():
-            if '-new-' in name:
-                field_pos = name.split('-new-')[1]
-                self.pm.add_player(excel_name, excel_name, field_pos)
-            else:
-                # Map player
-                self.excel_names_map[excel_name] = name

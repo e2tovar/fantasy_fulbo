@@ -17,11 +17,11 @@ from utils.utils_functions import contar_sabados_en_bimestre
 def initialize_session_state():
     keys_defaults = {
         "admin_logged": False,
-        "excel_uploaded": False,
         "excel_ok": False,
         "form_ok": False,
         "file_path": None,
         "unmatched_names_resolved": {},
+        "unmatched_names_dict": {},
         "autogol_players": {},
         "week_uploaded": False,
     }
@@ -34,11 +34,11 @@ def initialize_session_state():
 def reset_session_state():
     keys_defaults = {
         "admin_logged": False,
-        "excel_uploaded": False,
         "excel_ok": False,
         "form_ok": False,
         "file_path": None,
-        "new_players_match": {},
+        "unmatched_names_resolved": {},
+        "unmatched_names_dict": {},
         "autogol_players": {},
         "week_uploaded": False,
     }
@@ -87,7 +87,7 @@ def upload_excel():
     """
     with st.expander("Cargar archivo Excel", expanded=True):
         st.info("Obteniendo los datos desde el Excel...")
-        excel_file = st.file_uploader("Subir archivo Excel", type=["xlsx"], on_change=set_uploaded_state())
+        excel_file = st.file_uploader("Subir archivo Excel", type=["xlsx"])
         if excel_file:  # Cuando se sube con streamlit
             exm.read_excel(excel_file)
 
@@ -107,8 +107,12 @@ def upload_excel():
                 team_own_goal_list = exm.check_teams_own_goals()
                 if team_own_goal_list:
                     autogol_dialog(team_own_goal_list, exm.df_week_names)
+                else:
+                    st.session_state["excel_ok"] = True
+                    st.rerun()
 
             if not missing_players and not team_own_goal_list:
+                st.session_state["excel_ok"] = True
                 st.rerun()
         except Exception as e:
             st.error(f"Error al procesar el archivo Excel: {e}")
@@ -187,10 +191,6 @@ def show_results():
         st.error(f"Error al obtener estadísticas: {e}")
 
 
-def set_uploaded_state():
-    st.session_state.excel_uploaded = True
-
-
 # --- INICIO APP ---
 initialize_session_state()
 plm, psm, trm, tsm, exm = get_data_managers()
@@ -208,7 +208,6 @@ with col1:
         """
         ### A tener en cuenta:
          - Si subes una semana que ya está en BD se sobrescribirá.
-         - El nombre del excel es importante para recuperar la fecha, respetar el formato del nombre. (22-febrero.xlsx)
          - El excel debe estar guardado en xlsx.
          - El formato de los exceles actuales es el que funciona, si se cambia el formato puede que falle.
          - Los nombres de los dos sheets que funcionan son Lista y Partido
@@ -218,14 +217,15 @@ with col2:
         """
          ### Funciones pendientes a implementar:
          - Mejorar Logging
-         - Resolver Autogoles desde la web
-         - Resolver Empates desde la web
+         - Resolver Empates en todo desde la web
          - Posibilidad de agregar MVP y mejor GOL manualmente desde el BAR (antes el MVP era por la app pero se elimina)
          - Implementar función para modificar jugadores.
          - Leer los excels directamente de la web.
         """)
 
 st.markdown('---')
+
+st.button("Reiniciar", on_click=reset_session_state)
 
 if authenticate_admin():
     if not st.session_state["excel_ok"]:

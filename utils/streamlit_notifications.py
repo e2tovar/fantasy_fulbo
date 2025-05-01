@@ -7,7 +7,7 @@ from database.players import PlayerManager
 @st.dialog("Resolver jugadores")
 def identify_players_dialog(missmatched_players, pm: PlayerManager):
     all_players = pm.get_all_players()
-    all_players_options = all_players[pm.PLAYER_NAME].to_list()
+    all_players_options = all_players[pm.EXCEL_NAME].to_list()
     # add nuevo_jugador at first option
     all_players_options.insert(0, "Selecciona ...")
 
@@ -25,7 +25,6 @@ def identify_players_dialog(missmatched_players, pm: PlayerManager):
                 key=f"select_{player}")
 
             unmatched_names_dict[player] = selected_map
-            print(unmatched_names_dict)
 
         if st.form_submit_button("Continuar.."):
             if 'Selecciona ...' in unmatched_names_dict.values():

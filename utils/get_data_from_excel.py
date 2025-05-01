@@ -83,6 +83,8 @@ def read_excel_players_stats(file_path, dict_names_own_goal):
 
     df_player_stats.columns = ['name', 'team', 'goals', 'assists']
     df_player_stats.dropna(how='all', inplace=True, subset=['goals', 'assists'])
+    # Drop values starting by Autogol
+    df_player_stats = df_player_stats[~df_player_stats['name'].str.startswith('Autogol')].copy()
 
     df_stats = df_player_stats.merge(df_names, on=['name', 'team'], how='outer').copy()
     df_stats.fillna(0, inplace=True)

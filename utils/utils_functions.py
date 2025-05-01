@@ -10,9 +10,6 @@ def contar_sabados_en_bimestre(bimestre):
     contador = 0
     dia_actual = primer_dia_bimestre
 
-    print(dia_actual)
-    print(fecha_actual)
-
     while dia_actual <= fecha_actual:
         if dia_actual.weekday() == 5:  # 5 = Sábado
             contador += 1
